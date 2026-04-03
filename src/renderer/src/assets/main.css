@@ -67,8 +67,9 @@ button {
 }
 
 .composer-wrapper {
+  --composer-radius: 9px;
   position: relative;
-  border-radius: 9px;
+  border-radius: var(--composer-radius);
   padding: 1px;
   background: #2a2a2a;
   box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
@@ -90,6 +91,7 @@ button {
   opacity: 0;
   transition: opacity 0.4s ease;
   animation: rotate-border 3s linear infinite;
+  pointer-events: none;
 }
 
 .composer-wrapper.is-typing::before {
@@ -112,6 +114,52 @@ button {
 }
 
 .composer-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: calc(var(--composer-radius) - 1px);
+}
+
+.composer-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(74, 246, 38, 0.18) 0%,
+      rgba(74, 246, 38, 0.12) 28%,
+      rgba(74, 246, 38, 0.06) 48%,
+      rgba(74, 246, 38, 0.02) 64%,
+      transparent 82%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(38, 139, 246, 0.18) 0%,
+      rgba(38, 139, 246, 0.12) 28%,
+      rgba(38, 139, 246, 0.06) 48%,
+      rgba(38, 139, 246, 0.02) 64%,
+      transparent 82%
+    );
+  background-position: top left, top right;
+  background-repeat: no-repeat;
+  background-size: 34px 34px, 34px 34px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.composer-wrapper.is-typing .composer-inner::before {
+  opacity: 1;
+}
+
+.composer-toolbar {
+  border-top-left-radius: calc(var(--composer-radius) - 1px);
+  border-top-right-radius: calc(var(--composer-radius) - 1px);
+}
+
+.composer-inner > * {
   position: relative;
   z-index: 1;
 }

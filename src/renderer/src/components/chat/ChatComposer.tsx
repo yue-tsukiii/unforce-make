@@ -65,7 +65,7 @@ export function ChatComposer({
       <div className="mx-auto max-w-3xl">
         <div className={`composer-wrapper${isTyping ? ' is-typing' : ''}`}>
           <div className="composer-inner rounded-lg bg-[#161616]">
-            <div className="flex min-w-0 items-center gap-3 border-b border-[#222] px-3 py-2">
+            <div className="composer-toolbar flex min-w-0 items-center gap-3 bg-[#1b1b1b] px-3 py-2">
               <ModelSelector onSettingsClick={onSettingsClick} variant="composer" />
               {queuedCount > 0 && (
                 <span className="hidden shrink-0 text-[11px] text-[#666] sm:inline">
