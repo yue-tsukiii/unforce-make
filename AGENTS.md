@@ -1,0 +1,2 @@
+- use Bun for the project
+- use Tailwind CSS for styling

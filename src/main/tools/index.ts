@@ -1,0 +1,8 @@
+import type { ToolDefinition } from '@mariozechner/pi-coding-agent'
+import { createTavilyTools } from './tavily'
+import type { ToolContext } from './types'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createCustomTools(ctx: ToolContext): ToolDefinition<any, any, any>[] {
+  return createTavilyTools(ctx)
+}
