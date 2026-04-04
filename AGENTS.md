@@ -12,3 +12,4 @@
   prefer shared layout/shell primitives over premature business abstraction; avoid components that only stay "shared" through many variants, flags, or conditionals
   keep high-frequency state close to the smallest subtree that needs it, and do not lift state merely to force reuse
   if an extraction makes data flow, naming, or render behavior harder to follow, keep the code local until the pattern becomes clearer
+  before introducing new UI patterns or rewriting existing ones, check `src/renderer/src/components` for reusable atomic components and prefer reusing or extending them over creating parallel implementations
