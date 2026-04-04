@@ -167,13 +167,10 @@ export function ProviderForm({
   }
 
   const inputClass =
-    'w-full rounded border border-[#2a2a2a] bg-[#0c0c0c] px-2.5 py-1.5 text-[12px] text-[#ccc] placeholder:text-[#444] focus:border-[#4af626] focus:outline-none'
+    'w-full rounded bg-[#101010] px-2.5 py-1.5 text-[12px] text-[#ccc] placeholder:text-[#444] outline-none transition focus:bg-[#141414]'
 
   return (
-    <form
-      onSubmit={(e) => void handleSubmit(e)}
-      className="space-y-3 rounded border border-[#2a2a2a] bg-[#161616] p-3"
-    >
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3 rounded bg-[#1c1c1c] p-3">
       <div>
         <label className="mb-1 block text-[11px] text-[#666]">API Key</label>
         <input
@@ -271,7 +268,7 @@ export function ProviderForm({
           <button
             type="button"
             onClick={handleAddModel}
-            className="rounded border border-[#2a2a2a] bg-[#1e1e1e] px-2.5 py-1.5 text-[11px] text-[#999] hover:text-[#ccc]"
+            className="rounded bg-[#262626] px-2.5 py-1.5 text-[11px] text-[#999] transition hover:bg-[#2d2d2d] hover:text-[#ccc]"
           >
             add
           </button>
@@ -294,7 +291,7 @@ export function ProviderForm({
             type="button"
             onClick={() => void handleTest()}
             disabled={testing || !provider.hasApiKey}
-            className="rounded border border-[#2a2a2a] px-3 py-1.5 text-[11px] text-[#999] transition hover:text-[#ccc] disabled:opacity-50"
+            className="rounded bg-[#262626] px-3 py-1.5 text-[11px] text-[#999] transition hover:bg-[#2d2d2d] hover:text-[#ccc] disabled:opacity-50"
           >
             {testing ? 'testing...' : 'test'}
           </button>

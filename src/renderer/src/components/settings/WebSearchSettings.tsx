@@ -18,7 +18,7 @@ export function WebSearchSettings({
   const [saved, setSaved] = useState(false)
 
   const inputClass =
-    'w-full rounded border border-[#2a2a2a] bg-[#0c0c0c] px-2.5 py-1.5 text-[12px] text-[#ccc] placeholder:text-[#444] focus:border-[#4af626] focus:outline-none'
+    'w-full rounded bg-[#101010] px-2.5 py-1.5 text-[12px] text-[#ccc] placeholder:text-[#444] outline-none transition focus:bg-[#141414]'
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault()
@@ -47,10 +47,7 @@ export function WebSearchSettings({
   return (
     <section>
       <h3 className="mb-2 text-[11px] uppercase tracking-wider text-[#555]">Web Search</h3>
-      <form
-        onSubmit={(e) => void handleSubmit(e)}
-        className="space-y-3 rounded border border-[#2a2a2a] bg-[#161616] p-3"
-      >
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3 rounded bg-[#1c1c1c] p-3">
         <div className="flex items-center justify-between text-[12px]">
           <span className="text-[#ccc]">Tavily</span>
           <span className={settings?.hasTavilyApiKey ? 'text-[#4af626]' : 'text-[#666]'}>

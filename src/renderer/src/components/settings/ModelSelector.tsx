@@ -106,8 +106,8 @@ export function ModelSelector({
       : 'flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-[#888] transition hover:bg-[#1e1e1e] hover:text-[#ccc] disabled:opacity-50'
   const menuClasses =
     variant === 'composer'
-      ? 'absolute bottom-full left-0 z-50 mb-2 w-[min(32rem,calc(100vw-2rem))] rounded border border-[#2a2a2a] bg-[#161616] py-1 shadow-lg'
-      : 'absolute right-0 top-full z-50 mt-1 w-64 rounded border border-[#2a2a2a] bg-[#161616] py-1 shadow-lg'
+      ? 'absolute bottom-full left-0 z-50 mb-2 w-[min(32rem,calc(100vw-2rem))] rounded bg-[#161616] py-1 shadow-lg'
+      : 'absolute right-0 top-full z-50 mt-1 w-64 rounded bg-[#161616] py-1 shadow-lg'
 
   return (
     <div
@@ -196,7 +196,7 @@ export function ModelSelector({
             </div>
           ))}
 
-          <div className="border-t border-[#2a2a2a] px-3 py-2">
+          <div className="bg-[#1d1d1d] px-3 py-2">
             <button
               type="button"
               onClick={() => {
