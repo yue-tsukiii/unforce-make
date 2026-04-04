@@ -1,5 +1,4 @@
 import type { ReactElement } from 'react'
-import { useState } from 'react'
 
 import { useAgentChat } from '@/hooks/useAgentChat'
 import { useAutoScroll } from '@/hooks/useAutoScroll'
@@ -8,9 +7,12 @@ import { ChatTranscript } from '@/pages/chat/components/ChatTranscript'
 import { HeaderBar } from '@/pages/chat/components/HeaderBar'
 import { SessionList } from '@/pages/chat/components/SessionList'
 import { SetupRequiredState } from '@/pages/chat/components/SetupRequiredState'
-import { SettingsPanel } from '@/pages/chat/components/settings/SettingsPanel'
 
-export function ChatPage(): ReactElement | null {
+export function ChatPage({
+  onOpenSettings,
+}: {
+  onOpenSettings: () => void
+}): ReactElement | null {
   const {
     config,
     currentSessionPath,
@@ -30,7 +32,6 @@ export function ChatPage(): ReactElement | null {
     setInput,
   } = useAgentChat()
   const scrollRef = useAutoScroll([messages])
-  const [settingsOpen, setSettingsOpen] = useState(false)
 
   if (!config) {
     return null
@@ -42,7 +43,7 @@ export function ChatPage(): ReactElement | null {
         <SessionList
           variant="panel"
           onNewSession={() => void handleNewSession()}
-          onSettingsClick={() => setSettingsOpen(true)}
+          onSettingsClick={onOpenSettings}
           onResume={(path) => void handleResumeSession(path)}
           onDelete={(path) => void handleDeleteSession(path)}
           currentSessionPath={currentSessionPath}
@@ -53,7 +54,7 @@ export function ChatPage(): ReactElement | null {
         <HeaderBar />
 
         {!config.hasApiKey ? (
-          <SetupRequiredState onSettingsClick={() => setSettingsOpen(true)} />
+          <SetupRequiredState onSettingsClick={onOpenSettings} />
         ) : (
           <>
             <ChatTranscript isStreaming={isStreaming} messages={messages} scrollRef={scrollRef} />
@@ -67,14 +68,12 @@ export function ChatPage(): ReactElement | null {
               onEditQueuedPrompt={handleEditQueuedPrompt}
               onKeyDown={handleInputKeyDown}
               onRemoveQueuedPrompt={handleRemoveQueuedPrompt}
-              onSettingsClick={() => setSettingsOpen(true)}
+              onSettingsClick={onOpenSettings}
               onSubmit={() => void handleSubmit()}
             />
           </>
         )}
       </div>
-
-      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   )
 }

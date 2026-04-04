@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
-import { MemorySettings } from './MemorySettings'
-import { ProviderForm } from './ProviderForm'
-import { WebSearchSettings } from './WebSearchSettings'
+import { MemorySettings } from '@/pages/settings/components/MemorySettings'
+import { ProviderForm } from '@/pages/settings/components/ProviderForm'
+import { WebSearchSettings } from '@/pages/settings/components/WebSearchSettings'
 
 interface ProviderData {
   id: string
@@ -30,13 +30,11 @@ interface WebSearchData {
 
 type SettingsSection = 'model' | 'memory' | 'websearch'
 
-export function SettingsPanel({
-  open,
-  onClose,
+export function SettingsPage({
+  onBack,
 }: {
-  open: boolean
-  onClose: () => void
-}): ReactElement | null {
+  onBack: () => void
+}): ReactElement {
   const [providers, setProviders] = useState<ProviderData[]>([])
   const [webSearch, setWebSearch] = useState<WebSearchData | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -54,11 +52,9 @@ export function SettingsPanel({
   }, [])
 
   useEffect(() => {
-    if (open) {
-      void loadProviders()
-      void loadWebSearch()
-    }
-  }, [open, loadProviders, loadWebSearch])
+    void loadProviders()
+    void loadWebSearch()
+  }, [loadProviders, loadWebSearch])
 
   useEffect(() => {
     const unsub = window.api.onConfigChanged(() => {
@@ -66,8 +62,6 @@ export function SettingsPanel({
     })
     return unsub
   }, [loadProviders])
-
-  if (!open) return null
 
   const configured = providers.filter((provider) => provider.hasApiKey)
   const unconfigured = providers.filter((provider) => !provider.hasApiKey && provider.isBuiltIn)
@@ -196,90 +190,92 @@ export function SettingsPanel({
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5">
-      <div
-        className="absolute inset-0 bg-[var(--term-overlay)] backdrop-blur-[2px]"
-        onClick={onClose}
-      />
+    <div className="flex h-full bg-[var(--term-bg)] text-[var(--term-text)]">
+      <aside className="flex h-full w-[236px] shrink-0 flex-col overflow-hidden border-r border-[var(--term-border)] bg-[linear-gradient(180deg,#eef3f9_0%,#e7edf6_100%)]">
+        <div className="h-8 pl-20 [-webkit-app-region:drag] select-none" />
 
-      <div className="relative z-10 flex h-[min(660px,calc(100vh-24px))] w-[min(900px,calc(100vw-24px))] min-w-0 overflow-hidden rounded-[24px] border border-[var(--term-border)] bg-[var(--term-bg)] shadow-[0_24px_72px_rgba(92,118,154,0.16)] sm:h-[min(680px,calc(100vh-40px))] sm:w-[min(940px,calc(100vw-48px))] xl:rounded-[28px]">
-        <aside className="flex w-[176px] shrink-0 flex-col border-r border-[var(--term-border)] bg-[linear-gradient(180deg,#eef3f9_0%,#e7edf6_100%)] sm:w-[208px] xl:w-[240px]">
-          <div className="border-b border-[var(--term-border)] px-4 py-4 sm:px-5 sm:py-5">
-            <div className="text-[11px] uppercase tracking-[0.22em] text-[var(--term-blue-strong)]">
-              Settings
-            </div>
+        <div className="border-b border-[var(--term-border)] px-4 py-4 sm:px-5 sm:py-5">
+          <div className="text-[11px] uppercase tracking-[0.22em] text-[var(--term-blue-strong)]">
+            Settings
           </div>
+          <div className="mt-3 text-lg text-[var(--term-text)]">Workspace control</div>
+          <div className="mt-2 text-xs leading-6 text-[var(--term-text-soft)]">
+            Manage model access, memory, and retrieval behavior in one place.
+          </div>
+        </div>
 
-          <nav className="flex flex-1 flex-col gap-2 p-2.5 sm:p-3">
-            {navItems.map((item) => {
-              const isActive = item.id === activeSection
+        <nav className="flex flex-1 flex-col gap-2 p-3">
+          {navItems.map((item) => {
+            const isActive = item.id === activeSection
 
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveSection(item.id)}
-                  className={`w-full rounded-2xl px-3 py-2.5 text-left transition sm:px-4 sm:py-3 ${
-                    isActive
-                      ? 'border border-[var(--term-accent-soft-strong)] bg-[var(--term-accent-soft)] text-[var(--term-blue-strong)] shadow-[0_14px_40px_rgba(120,166,248,0.14)]'
-                      : 'border border-transparent bg-transparent text-[var(--term-text-soft)] hover:border-[var(--term-border)] hover:bg-[var(--term-surface)]'
-                  }`}
-                >
-                  <div className="text-sm">{item.label}</div>
-                  <div
-                    className={`mt-1 hidden text-[11px] sm:block ${isActive ? 'text-[#7c94bc]' : 'text-[var(--term-dim)]'}`}
-                  >
-                    {item.description}
-                  </div>
-                </button>
-              )
-            })}
-          </nav>
-        </aside>
-
-        <section className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-start justify-between border-b border-[var(--term-border)] bg-[var(--term-surface-soft)] px-4 py-4 sm:px-5 sm:py-5 md:px-6">
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.22em] text-[var(--term-dim)]">
-                {activeSection}
-              </div>
-              <div className="mt-2 text-base text-[var(--term-text)] sm:text-lg">
-                {navItems.find((item) => item.id === activeSection)?.label}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl p-2 text-[var(--term-dim)] transition hover:bg-[var(--term-surface)] hover:text-[var(--term-text)]"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveSection(item.id)}
+                className={`w-full rounded-2xl px-4 py-3 text-left transition ${
+                  isActive
+                    ? 'border border-[var(--term-accent-soft-strong)] bg-[var(--term-accent-soft)] text-[var(--term-blue-strong)] shadow-[0_14px_40px_rgba(120,166,248,0.14)]'
+                    : 'border border-transparent bg-transparent text-[var(--term-text-soft)] hover:border-[var(--term-border)] hover:bg-[var(--term-surface)]'
+                }`}
               >
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+                <div className="text-sm">{item.label}</div>
+                <div
+                  className={`mt-1 text-[11px] ${isActive ? 'text-[#7c94bc]' : 'text-[var(--term-dim)]'}`}
+                >
+                  {item.description}
+                </div>
+              </button>
+            )
+          })}
+        </nav>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6">
-            {activeSection === 'model' && renderModelSection()}
-            {activeSection === 'memory' && <MemorySettings />}
-            {activeSection === 'websearch' && (
-              <WebSearchSettings
-                settings={webSearch}
-                onSave={async (data) => {
-                  await window.api.saveWebSearchConfig(data)
-                  await loadWebSearch()
-                }}
-              />
-            )}
+        <div className="border-t border-[var(--term-border)] p-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-10 w-full items-center justify-center rounded border border-[var(--term-border)] bg-[var(--term-surface)] text-[12px] text-[var(--term-text-soft)] transition hover:bg-[var(--term-surface-soft)] hover:text-[var(--term-text)]"
+          >
+            back to chat
+          </button>
+        </div>
+      </aside>
+
+      <section className="flex min-w-0 flex-1 flex-col">
+        <div className="h-8 bg-[var(--term-bg)] pl-20 [-webkit-app-region:drag] select-none" />
+
+        <div className="flex items-start justify-between border-b border-[var(--term-border)] bg-[var(--term-surface-soft)] px-4 py-4 sm:px-5 sm:py-5 md:px-6">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.22em] text-[var(--term-dim)]">
+              {activeSection}
+            </div>
+            <div className="mt-2 text-base text-[var(--term-text)] sm:text-lg">
+              {navItems.find((item) => item.id === activeSection)?.label}
+            </div>
           </div>
-        </section>
-      </div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-xl px-3 py-2 text-[12px] text-[var(--term-dim)] transition hover:bg-[var(--term-surface)] hover:text-[var(--term-text)]"
+          >
+            close
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6">
+          {activeSection === 'model' && renderModelSection()}
+          {activeSection === 'memory' && <MemorySettings />}
+          {activeSection === 'websearch' && (
+            <WebSearchSettings
+              settings={webSearch}
+              onSave={async (data) => {
+                await window.api.saveWebSearchConfig(data)
+                await loadWebSearch()
+              }}
+            />
+          )}
+        </div>
+      </section>
     </div>
   )
 }
