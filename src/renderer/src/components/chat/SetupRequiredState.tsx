@@ -9,13 +9,13 @@ export function SetupRequiredState({
     <main className="flex flex-1 items-center justify-center px-6">
       <div className="w-full max-w-lg">
         <div className="mb-4 flex items-center gap-2">
-          <span className="text-[#e5c07b]">!</span>
-          <span className="text-sm text-[#ccc]">setup required</span>
+          <span className="text-[var(--term-yellow)]">!</span>
+          <span className="text-sm text-[var(--term-text)]">setup required</span>
         </div>
-        <p className="text-[13px] text-[#999]">
+        <p className="text-[13px] text-[var(--term-text-soft)]">
           Add an AI provider in settings before starting a chat session.
         </p>
-        <div className="mt-4 rounded border border-[#2a2a2a] bg-[#161616] p-4 text-[12px] leading-relaxed text-[#999]">
+        <div className="mt-4 rounded border border-[var(--term-border)] bg-[var(--term-surface)] p-4 text-[12px] leading-relaxed text-[var(--term-text-soft)]">
           Open settings, add an API key for a built-in provider or create a custom provider, then
           pick a model.
         </div>
@@ -23,7 +23,7 @@ export function SetupRequiredState({
           <button
             type="button"
             onClick={onSettingsClick}
-            className="rounded bg-[#4af626] px-3 py-1.5 text-[11px] font-medium text-black transition hover:bg-[#3dd51e]"
+            className="rounded bg-[var(--term-blue)] px-3 py-1.5 text-[11px] font-medium text-white transition hover:bg-[#2459bf]"
           >
             open settings
           </button>

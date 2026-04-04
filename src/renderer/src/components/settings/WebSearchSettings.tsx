@@ -18,7 +18,7 @@ export function WebSearchSettings({
   const [saved, setSaved] = useState(false)
 
   const inputClass =
-    'w-full rounded bg-[#101010] px-2.5 py-1.5 text-[12px] text-[#ccc] placeholder:text-[#444] outline-none transition focus:bg-[#141414]'
+    'w-full rounded border border-[var(--term-border)] bg-[var(--term-surface)] px-2.5 py-1.5 text-[12px] text-[var(--term-text)] placeholder:text-[var(--term-dim)] outline-none transition focus:border-[var(--term-blue)]'
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault()
@@ -46,21 +46,26 @@ export function WebSearchSettings({
 
   return (
     <section>
-      <h3 className="mb-2 text-[11px] uppercase tracking-wider text-[#555]">Web Search</h3>
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3 rounded bg-[#1c1c1c] p-3">
+      <h3 className="mb-2 text-[11px] uppercase tracking-wider text-[var(--term-dim)]">
+        Web Search
+      </h3>
+      <form
+        onSubmit={(e) => void handleSubmit(e)}
+        className="space-y-3 rounded-xl border border-[var(--term-border)] bg-[var(--term-surface)] p-4"
+      >
         <div className="flex items-center justify-between text-[12px]">
-          <span className="text-[#ccc]">Tavily</span>
-          <span className={settings?.hasTavilyApiKey ? 'text-[#4af626]' : 'text-[#666]'}>
+          <span className="text-[var(--term-text)]">Tavily</span>
+          <span className={settings?.hasTavilyApiKey ? 'text-[var(--term-cyan)]' : 'text-[var(--term-dim)]'}>
             {settings?.hasTavilyApiKey ? 'configured' : 'not configured'}
           </span>
         </div>
 
-        <p className="text-[12px] leading-relaxed text-[#777]">
+        <p className="text-[12px] leading-relaxed text-[var(--term-text-soft)]">
           Enables the <code>web_search</code> and <code>web_extract</code> tools.
         </p>
 
         <div>
-          <label className="mb-1 block text-[11px] text-[#666]">Tavily API Key</label>
+          <label className="mb-1 block text-[11px] text-[var(--term-dim)]">Tavily API Key</label>
           <input
             type="password"
             value={tavilyApiKey}
@@ -72,14 +77,14 @@ export function WebSearchSettings({
           />
         </div>
 
-        {error && <p className="text-[11px] text-[#e06c75]">{error}</p>}
-        {saved && <p className="text-[11px] text-[#4af626]">saved</p>}
+        {error && <p className="text-[11px] text-[var(--term-red)]">{error}</p>}
+        {saved && <p className="text-[11px] text-[var(--term-cyan)]">saved</p>}
 
         <div className="pt-1">
           <button
             type="submit"
             disabled={saving}
-            className="rounded bg-[#4af626] px-3 py-1.5 text-[11px] font-medium text-black transition hover:bg-[#3dd51e] disabled:opacity-50"
+            className="rounded bg-[var(--term-blue)] px-3 py-1.5 text-[11px] font-medium text-white transition hover:bg-[#2459bf] disabled:opacity-50"
           >
             {saving ? 'saving...' : 'save'}
           </button>

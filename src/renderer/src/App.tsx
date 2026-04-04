@@ -34,8 +34,8 @@ export default function App(): ReactElement | null {
   }
 
   return (
-    <div className="relative flex h-full bg-[#0c0c0c]">
-      <aside className="h-full w-[236px] shrink-0 overflow-hidden bg-[#111111]">
+    <div className="relative flex h-full bg-[var(--term-bg)] text-[var(--term-text)]">
+      <aside className="h-full w-[236px] shrink-0 overflow-hidden border-r border-[var(--term-border)] bg-[var(--term-panel)]">
         <SessionList
           variant="panel"
           onNewSession={() => void handleNewSession()}
@@ -46,7 +46,7 @@ export default function App(): ReactElement | null {
         />
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col bg-[#0c0c0c]">
+      <div className="flex min-w-0 flex-1 flex-col bg-[var(--term-bg)]">
         <HeaderBar />
 
         {!config.hasApiKey ? (

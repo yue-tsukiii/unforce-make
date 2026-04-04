@@ -15,8 +15,8 @@ export function MessageRow({
     return (
       <div className="message-enter">
         <div className="flex gap-2">
-          <span className="shrink-0 text-[#6a9ef5]">&gt;</span>
-          <div className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[13px] text-[#e0e0e0]">
+          <span className="shrink-0 text-[var(--term-blue)]">&gt;</span>
+          <div className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[13px] text-[var(--term-text)]">
             {message.content}
           </div>
         </div>
@@ -36,7 +36,7 @@ export function MessageRow({
 
   return (
     <div className={hasBlocks ? 'message-enter' : undefined}>
-      <div className="min-w-0 space-y-2 border-l border-[#2a2a2a] pl-4">
+      <div className="min-w-0 space-y-2 border-l border-[var(--term-border)] pl-4">
         {message.blocks?.map((block) => (
           <BlockView
             key={
@@ -48,7 +48,7 @@ export function MessageRow({
           />
         ))}
         {isStreaming && hasBlocks && (
-          <span className="inline-block text-[#4af626] [animation:blink_0.8s_step-end_infinite]">
+          <span className="inline-block text-[var(--term-blue)] [animation:blink_0.8s_step-end_infinite]">
             _
           </span>
         )}

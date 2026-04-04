@@ -74,10 +74,14 @@ export function SessionList({
 
   const listContent = (
     <>
-      {loading && <div className="px-3 py-4 text-center text-[11px] text-[#666]">Loading...</div>}
+      {loading && (
+        <div className="px-3 py-4 text-center text-[11px] text-[var(--term-dim)]">Loading...</div>
+      )}
 
       {!loading && sessions.length === 0 && (
-        <div className="px-3 py-4 text-center text-[11px] text-[#666]">No sessions yet</div>
+        <div className="px-3 py-4 text-center text-[11px] text-[var(--term-dim)]">
+          No sessions yet
+        </div>
       )}
 
       {!loading &&
@@ -87,7 +91,7 @@ export function SessionList({
             <div
               key={s.id}
               className={`group flex items-center gap-1 transition ${
-                isCurrent ? 'bg-[#162218]' : 'hover:bg-[#1a1a1a]'
+                isCurrent ? 'bg-[#e3ecfb]' : 'hover:bg-[var(--term-surface-soft)]'
               }`}
             >
               <button
@@ -100,20 +104,20 @@ export function SessionList({
                   }
                 }}
                 className={`flex min-w-0 flex-1 flex-col gap-1 px-3 py-3 text-left ${
-                  isCurrent ? 'text-[#4af626]' : 'text-[#ccc]'
+                  isCurrent ? 'text-[var(--term-blue)]' : 'text-[var(--term-text)]'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-[11px] font-medium">
                     {s.name || s.firstMessage || `Session ${s.id}`}
                   </span>
-                  <span className="shrink-0 text-[10px] text-[#666]">
+                  <span className="shrink-0 text-[10px] text-[var(--term-dim)]">
                     {formatRelativeTime(s.modified)}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] text-[#666]">
+                <div className="flex items-center gap-2 text-[10px] text-[var(--term-dim)]">
                   <span>{s.messageCount} msgs</span>
-                  {isCurrent && <span className="text-[#4af626]">current</span>}
+                  {isCurrent && <span className="text-[var(--term-blue)]">current</span>}
                 </div>
               </button>
 
@@ -124,7 +128,7 @@ export function SessionList({
                   void onDelete(s.path)
                   setSessions((prev) => prev.filter((x) => x.path !== s.path))
                 }}
-                className={`mr-2 shrink-0 rounded p-1 text-[#666] transition hover:bg-[#2a2a2a] hover:text-[#f66] ${
+                className={`mr-2 shrink-0 rounded p-1 text-[var(--term-dim)] transition hover:bg-[#efe3db] hover:text-[var(--term-red)] ${
                   variant === 'panel' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
                 title="Delete session"
@@ -151,7 +155,7 @@ export function SessionList({
 
   if (variant === 'panel') {
     return (
-      <div className="flex h-full min-h-0 flex-col bg-[#111111]">
+      <div className="flex h-full min-h-0 flex-col bg-[var(--term-panel)]">
         <div
           className="px-4 pb-4 pt-5
         "
@@ -160,7 +164,7 @@ export function SessionList({
             <button
               type="button"
               onClick={() => void onNewSession()}
-              className="mt-4 flex h-10 w-full items-center justify-center rounded bg-[#1c1c1c] text-[12px] text-[#888] transition hover:bg-[#252525] hover:text-[#ccc]"
+              className="mt-4 flex h-10 w-full items-center justify-center rounded border border-[var(--term-border)] bg-[var(--term-surface)] text-[12px] text-[var(--term-text-soft)] transition hover:bg-[var(--term-surface-soft)] hover:text-[var(--term-text)]"
             >
               + new session
             </button>
@@ -173,7 +177,7 @@ export function SessionList({
           <button
             type="button"
             onClick={onSettingsClick}
-            className="flex h-10 w-full items-center gap-3 rounded px-3 text-[#666] transition hover:bg-[#202020] hover:text-[#ccc]"
+            className="flex h-10 w-full items-center gap-3 rounded px-3 text-[var(--term-dim)] transition hover:bg-[var(--term-surface)] hover:text-[var(--term-text)]"
             title="Settings"
           >
             <svg
@@ -201,7 +205,7 @@ export function SessionList({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="rounded p-1.5 text-[#666] transition hover:bg-[#1e1e1e] hover:text-[#ccc]"
+        className="rounded p-1.5 text-[var(--term-dim)] transition hover:bg-[var(--term-surface-soft)] hover:text-[var(--term-text)]"
         title="Session history"
       >
         <svg
@@ -220,8 +224,8 @@ export function SessionList({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-lg bg-[#161616] shadow-xl">
-          <div className="bg-[#1d1d1d] px-3 py-2 text-[11px] font-medium text-[#888]">
+        <div className="absolute right-0 top-full z-50 mt-1 w-72 overflow-hidden rounded-lg border border-[var(--term-border)] bg-[var(--term-surface)] shadow-xl">
+          <div className="bg-[var(--term-surface-soft)] px-3 py-2 text-[11px] font-medium text-[var(--term-text-soft)]">
             Recent Sessions
           </div>
 

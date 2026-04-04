@@ -64,11 +64,11 @@ export function ChatComposer({
     <div className="px-4 pb-5 pt-2">
       <div className="mx-auto max-w-3xl">
         <div className={`composer-wrapper${isTyping ? ' is-typing' : ''}`}>
-          <div className="composer-inner rounded-lg bg-[#161616]">
-            <div className="composer-toolbar flex min-w-0 items-center gap-3 bg-[#1b1b1b] px-3 py-2">
+          <div className="composer-inner rounded-lg bg-[var(--term-surface)]">
+            <div className="composer-toolbar flex min-w-0 items-center gap-3 bg-[var(--term-surface-soft)] px-3 py-2">
               <ModelSelector onSettingsClick={onSettingsClick} variant="composer" />
               {queuedCount > 0 && (
-                <span className="hidden shrink-0 text-[11px] text-[#666] sm:inline">
+                <span className="hidden shrink-0 text-[11px] text-[var(--term-dim)] sm:inline">
                   {queuedCount} queued
                 </span>
               )}
@@ -85,7 +85,7 @@ export function ChatComposer({
                   onScroll={handleScroll}
                   placeholder={isStreaming ? 'queue another message' : 'type here'}
                   rows={1}
-                  className="max-h-[120px] min-h-[20px] w-full resize-none bg-transparent p-0 text-[13px] text-transparent caret-[#4af626] outline-none placeholder:text-[#444]"
+                  className="max-h-[120px] min-h-[20px] w-full resize-none bg-transparent p-0 text-[13px] text-transparent caret-[var(--term-blue)] outline-none placeholder:text-[var(--term-dim)]"
                   style={{ fieldSizing: 'content' } as CSSProperties}
                 />
 
@@ -93,7 +93,7 @@ export function ChatComposer({
                 {input.length > 0 && (
                   <div
                     ref={mirrorRef}
-                    className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words text-[13px] leading-[1.6] text-[#e0e0e0]"
+                    className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words text-[13px] leading-[1.6] text-[var(--term-text)]"
                     aria-hidden="true"
                   >
                     <span>{input.slice(0, animateFrom)}</span>
@@ -110,7 +110,7 @@ export function ChatComposer({
                 {isStreaming && (
                   <button
                     type="button"
-                    className="rounded px-2 py-1 text-[11px] text-[#e06c75] transition hover:bg-[#1e1e1e]"
+                    className="rounded px-2 py-1 text-[11px] text-[var(--term-red)] transition hover:bg-[var(--term-surface-soft)]"
                     onClick={onAbort}
                     title="Stop"
                   >
@@ -120,7 +120,9 @@ export function ChatComposer({
                 <button
                   type="button"
                   className={`rounded px-2 py-1 text-[11px] transition ${
-                    hasInput ? 'text-[#4af626] hover:bg-[#1e1e1e]' : 'text-[#333]'
+                    hasInput
+                      ? 'text-[var(--term-blue)] hover:bg-[var(--term-surface-soft)]'
+                      : 'text-[#bda995]'
                   }`}
                   onClick={onSubmit}
                   disabled={!hasInput}

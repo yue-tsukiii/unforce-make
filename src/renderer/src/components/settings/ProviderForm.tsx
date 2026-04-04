@@ -167,12 +167,15 @@ export function ProviderForm({
   }
 
   const inputClass =
-    'w-full rounded bg-[#101010] px-2.5 py-1.5 text-[12px] text-[#ccc] placeholder:text-[#444] outline-none transition focus:bg-[#141414]'
+    'w-full rounded border border-[var(--term-border)] bg-[var(--term-surface)] px-2.5 py-1.5 text-[12px] text-[var(--term-text)] placeholder:text-[var(--term-dim)] outline-none transition focus:border-[var(--term-blue)]'
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3 rounded bg-[#1c1c1c] p-3">
+    <form
+      onSubmit={(e) => void handleSubmit(e)}
+      className="space-y-3 rounded-xl border border-[var(--term-border)] bg-[var(--term-surface)] p-4"
+    >
       <div>
-        <label className="mb-1 block text-[11px] text-[#666]">API Key</label>
+        <label className="mb-1 block text-[11px] text-[var(--term-dim)]">API Key</label>
         <input
           type="password"
           value={apiKey}
@@ -185,7 +188,7 @@ export function ProviderForm({
       {!isBuiltIn && (
         <>
           <div>
-            <label className="mb-1 block text-[11px] text-[#666]">Name</label>
+            <label className="mb-1 block text-[11px] text-[var(--term-dim)]">Name</label>
             <input
               type="text"
               value={displayName}
@@ -196,7 +199,7 @@ export function ProviderForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] text-[#666]">Protocol</label>
+            <label className="mb-1 block text-[11px] text-[var(--term-dim)]">Protocol</label>
             <select
               value={protocol}
               onChange={(e) => setProtocol(e.target.value)}
@@ -211,7 +214,7 @@ export function ProviderForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] text-[#666]">Base URL</label>
+            <label className="mb-1 block text-[11px] text-[var(--term-dim)]">Base URL</label>
             <input
               type="text"
               value={baseUrl}
@@ -224,11 +227,11 @@ export function ProviderForm({
       )}
 
       <div>
-        <label className="mb-1 block text-[11px] text-[#666]">
+        <label className="mb-1 block text-[11px] text-[var(--term-dim)]">
           {isBuiltIn ? 'Custom Models' : 'Models'}
         </label>
         {isBuiltIn && (
-          <p className="mb-1.5 text-[10px] text-[#555]">
+          <p className="mb-1.5 text-[10px] text-[var(--term-dim)]">
             Add model IDs not yet in the built-in list
           </p>
         )}
@@ -238,13 +241,13 @@ export function ProviderForm({
             .map((m) => (
               <div
                 key={m.id}
-                className="flex items-center justify-between rounded bg-[#0c0c0c] px-2.5 py-1.5 text-[12px]"
+                className="flex items-center justify-between rounded border border-[var(--term-border)] bg-[var(--term-surface-soft)] px-2.5 py-1.5 text-[12px]"
               >
-                <span className="text-[#999]">{m.name}</span>
+                <span className="text-[var(--term-text-soft)]">{m.name}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveModel(m.id)}
-                  className="text-[#555] hover:text-[#e06c75]"
+                  className="text-[var(--term-dim)] hover:text-[var(--term-red)]"
                 >
                   x
                 </button>
@@ -268,20 +271,20 @@ export function ProviderForm({
           <button
             type="button"
             onClick={handleAddModel}
-            className="rounded bg-[#262626] px-2.5 py-1.5 text-[11px] text-[#999] transition hover:bg-[#2d2d2d] hover:text-[#ccc]"
+            className="rounded border border-[var(--term-border)] bg-[var(--term-surface-soft)] px-2.5 py-1.5 text-[11px] text-[var(--term-text-soft)] transition hover:bg-[#ede3d5] hover:text-[var(--term-text)]"
           >
             add
           </button>
         </div>
       </div>
 
-      {error && <p className="text-[11px] text-[#e06c75]">{error}</p>}
+      {error && <p className="text-[11px] text-[var(--term-red)]">{error}</p>}
 
       <div className="flex items-center gap-2 pt-1">
         <button
           type="submit"
           disabled={saving}
-          className="rounded bg-[#4af626] px-3 py-1.5 text-[11px] font-medium text-black transition hover:bg-[#3dd51e] disabled:opacity-50"
+          className="rounded bg-[var(--term-blue)] px-3 py-1.5 text-[11px] font-medium text-white transition hover:bg-[#2459bf] disabled:opacity-50"
         >
           {saving ? 'saving...' : 'save'}
         </button>
@@ -291,7 +294,7 @@ export function ProviderForm({
             type="button"
             onClick={() => void handleTest()}
             disabled={testing || !provider.hasApiKey}
-            className="rounded bg-[#262626] px-3 py-1.5 text-[11px] text-[#999] transition hover:bg-[#2d2d2d] hover:text-[#ccc] disabled:opacity-50"
+            className="rounded border border-[var(--term-border)] bg-[var(--term-surface-soft)] px-3 py-1.5 text-[11px] text-[var(--term-text-soft)] transition hover:bg-[#ede3d5] hover:text-[var(--term-text)] disabled:opacity-50"
           >
             {testing ? 'testing...' : 'test'}
           </button>
@@ -299,7 +302,7 @@ export function ProviderForm({
 
         {testResult && (
           <span
-            className={`text-[11px] ${testResult.success ? 'text-[#4af626]' : 'text-[#e06c75]'}`}
+            className={`text-[11px] ${testResult.success ? 'text-[var(--term-cyan)]' : 'text-[var(--term-red)]'}`}
           >
             {testResult.success ? 'ok' : testResult.error}
           </span>
@@ -309,7 +312,7 @@ export function ProviderForm({
           <button
             type="button"
             onClick={onCancel}
-            className="ml-auto text-[11px] text-[#555] hover:text-[#999]"
+            className="ml-auto text-[11px] text-[var(--term-dim)] hover:text-[var(--term-text)]"
           >
             cancel
           </button>
@@ -319,7 +322,7 @@ export function ProviderForm({
           <button
             type="button"
             onClick={() => void onDelete()}
-            className="ml-auto text-[11px] text-[#e06c75] hover:text-[#ff8a92]"
+            className="ml-auto text-[11px] text-[var(--term-red)] hover:text-[#a73d45]"
           >
             delete
           </button>
