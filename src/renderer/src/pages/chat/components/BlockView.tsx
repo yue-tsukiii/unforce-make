@@ -10,7 +10,13 @@ import { formatArgs } from '@/utils/formatArgs'
 const remarkPlugins = [remarkGfm]
 const rehypePlugins = [rehypeHighlight]
 
-export function BlockView({ block }: { block: Block }): ReactElement | null {
+export function BlockView({
+  block,
+  isThinkingActive = false,
+}: {
+  block: Block
+  isThinkingActive?: boolean
+}): ReactElement | null {
   const [expanded, setExpanded] = useState(false)
 
   if (block.type === 'text') {
@@ -34,7 +40,7 @@ export function BlockView({ block }: { block: Block }): ReactElement | null {
           >
             <path d="M6 4l4 4-4 4" />
           </svg>
-          thinking...
+          {isThinkingActive ? 'thinking...' : 'thinking'}
         </summary>
         <div className="mt-2 border-l border-[var(--term-border-strong)] pl-3">
           <div className="markdown-body text-[12px] leading-relaxed text-[var(--term-text-soft)]">

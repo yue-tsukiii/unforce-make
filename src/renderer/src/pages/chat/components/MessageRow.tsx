@@ -37,16 +37,22 @@ export function MessageRow({
   return (
     <div className={hasBlocks ? 'message-enter' : undefined}>
       <div className="min-w-0 space-y-2 border-l border-[var(--term-border)] pl-4">
-        {message.blocks?.map((block) => (
-          <BlockView
-            key={
-              block.type === 'tool'
-                ? block.id
-                : `${block.type}:${block.content.length}:${block.content.slice(0, 32)}`
-            }
-            block={block}
-          />
-        ))}
+        {message.blocks?.map((block, index, blocks) => {
+          const isThinkingActive =
+            isStreaming && block.type === 'thinking' && index === blocks.length - 1
+
+          return (
+            <BlockView
+              key={
+                block.type === 'tool'
+                  ? block.id
+                  : `${block.type}:${block.content.length}:${block.content.slice(0, 32)}`
+              }
+              block={block}
+              isThinkingActive={isThinkingActive}
+            />
+          )
+        })}
         {isStreaming && hasBlocks && (
           <span className="inline-block text-[var(--term-blue)] [animation:blink_0.8s_step-end_infinite]">
             _
