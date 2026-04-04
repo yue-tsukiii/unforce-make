@@ -1,7 +1,7 @@
 {
-  "name": "agent-desktop",
+  "name": "Aila",
   "version": "0.1.0",
-  "description": "Minimal desktop AI agent",
+  "description": "Aila is a desktop AI agent that helps you with your daily tasks.",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
