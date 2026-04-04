@@ -1,14 +1,14 @@
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 
-import { ChatComposer } from '@/components/chat/ChatComposer'
-import { ChatTranscript } from '@/components/chat/ChatTranscript'
-import { HeaderBar } from '@/components/chat/HeaderBar'
-import { SessionList } from '@/components/chat/SessionList'
-import { SetupRequiredState } from '@/components/chat/SetupRequiredState'
-import { SettingsPanel } from '@/components/settings/SettingsPanel'
 import { useAgentChat } from '@/hooks/useAgentChat'
 import { useAutoScroll } from '@/hooks/useAutoScroll'
+import { ChatComposer } from '@/pages/chat/components/ChatComposer'
+import { ChatTranscript } from '@/pages/chat/components/ChatTranscript'
+import { HeaderBar } from '@/pages/chat/components/HeaderBar'
+import { SessionList } from '@/pages/chat/components/SessionList'
+import { SetupRequiredState } from '@/pages/chat/components/SetupRequiredState'
+import { SettingsPanel } from '@/pages/chat/components/settings/SettingsPanel'
 
 export default function App(): ReactElement | null {
   const {

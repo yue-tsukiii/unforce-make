@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 
-import { BlockView } from '@/components/chat/BlockView'
-import { WaitingIndicator } from '@/components/chat/WaitingIndicator'
+import { BlockView } from '@/pages/chat/components/BlockView'
+import { WaitingIndicator } from '@/pages/chat/components/WaitingIndicator'
 import type { Message } from '@/types/chat'
 
 export function MessageRow({

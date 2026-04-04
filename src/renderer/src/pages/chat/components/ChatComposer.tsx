@@ -7,7 +7,8 @@ import {
   useRef,
   useState,
 } from 'react'
-import { ModelSelector } from '@/components/settings/ModelSelector'
+
+import { ModelSelector } from '@/pages/chat/components/settings/ModelSelector'
 import type { QueuedPromptDraft } from '@/types/chat'
 
 export function ChatComposer({

@@ -1,7 +1,7 @@
 import type { ReactElement, RefObject } from 'react'
 
-import { EmptyState } from '@/components/chat/EmptyState'
-import { MessageRow } from '@/components/chat/MessageRow'
+import { EmptyState } from '@/pages/chat/components/EmptyState'
+import { MessageRow } from '@/pages/chat/components/MessageRow'
 import type { Message } from '@/types/chat'
 
 export function ChatTranscript({

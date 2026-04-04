@@ -208,12 +208,6 @@ export function SettingsPanel({
             <div className="text-[11px] uppercase tracking-[0.22em] text-[var(--term-blue-strong)]">
               Settings
             </div>
-            <div className="mt-2 text-base text-[var(--term-text)] sm:mt-3 sm:text-lg">
-              Workspace control
-            </div>
-            <div className="mt-2 hidden text-xs leading-6 text-[var(--term-text-soft)] sm:block">
-              Manage model access, memory, and retrieval behavior in one place.
-            </div>
           </div>
 
           <nav className="flex flex-1 flex-col gap-2 p-2.5 sm:p-3">
