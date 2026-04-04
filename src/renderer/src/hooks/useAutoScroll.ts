@@ -9,8 +9,7 @@ export function useAutoScroll(deps: DependencyList): RefObject<HTMLDivElement | 
     if (element) {
       element.scrollTop = element.scrollHeight
     }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: deps forwarded from caller
-  }, deps)
+  }, [...deps])
 
   return scrollRef
 }
