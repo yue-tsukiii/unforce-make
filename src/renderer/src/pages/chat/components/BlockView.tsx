@@ -32,7 +32,7 @@ export function BlockView({ block }: { block: Block }): ReactElement | null {
             viewBox="0 0 16 16"
             fill="currentColor"
           >
-          <path d="M6 4l4 4-4 4" />
+            <path d="M6 4l4 4-4 4" />
           </svg>
           thinking...
         </summary>

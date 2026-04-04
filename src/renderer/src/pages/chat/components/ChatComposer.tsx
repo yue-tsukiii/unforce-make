@@ -12,30 +12,25 @@ import { ModelSelector } from '@/pages/chat/components/ModelSelector'
 import type { QueuedPromptDraft } from '@/types/chat'
 
 export function ChatComposer({
-  input,
   isStreaming,
   queuedCount,
   queuedPrompts,
   onAbort,
-  onChange,
   onEditQueuedPrompt,
-  onKeyDown,
   onRemoveQueuedPrompt,
   onSettingsClick,
   onSubmit,
 }: {
-  input: string
   isStreaming: boolean
   queuedCount: number
   queuedPrompts: QueuedPromptDraft[]
   onAbort: () => void | Promise<void>
-  onChange: (value: string) => void
-  onEditQueuedPrompt: (promptId: string) => void
-  onKeyDown: KeyboardEventHandler<HTMLTextAreaElement>
+  onEditQueuedPrompt: (promptId: string, currentDraft: string) => string | null
   onRemoveQueuedPrompt: (promptId: string) => void
   onSettingsClick: () => void
-  onSubmit: () => void | Promise<void>
+  onSubmit: (value: string) => boolean | Promise<boolean>
 }): ReactElement {
+  const [input, setInput] = useState('')
   const hasInput = input.trim().length > 0
   const [isTyping, setIsTyping] = useState(false)
   const typingTimer = useRef<ReturnType<typeof setTimeout>>(null)
@@ -52,15 +47,20 @@ export function ChatComposer({
     prevInputRef.current = input
   }, [input])
 
-  const handleChange = useCallback(
-    (value: string) => {
-      onChange(value)
-      setIsTyping(true)
-      typingTimer.current && clearTimeout(typingTimer.current)
-      typingTimer.current = setTimeout(() => setIsTyping(false), 600)
-    },
-    [onChange],
-  )
+  useEffect(() => {
+    return () => {
+      if (typingTimer.current) {
+        clearTimeout(typingTimer.current)
+      }
+    }
+  }, [])
+
+  const handleChange = useCallback((value: string) => {
+    setInput(value)
+    setIsTyping(true)
+    typingTimer.current && clearTimeout(typingTimer.current)
+    typingTimer.current = setTimeout(() => setIsTyping(false), 600)
+  }, [])
 
   const handleScroll = useCallback(() => {
     if (textareaRef.current && mirrorRef.current) {
@@ -68,12 +68,37 @@ export function ChatComposer({
     }
   }, [])
 
+  const handleSubmit = useCallback(async () => {
+    const submitted = await onSubmit(input)
+    if (!submitted) {
+      return
+    }
+
+    setInput('')
+    prevInputRef.current = ''
+  }, [input, onSubmit])
+
+  const handleKeyDown = useCallback<KeyboardEventHandler<HTMLTextAreaElement>>(
+    (event) => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+        event.preventDefault()
+        void handleSubmit()
+      }
+    },
+    [handleSubmit],
+  )
+
   const handleEditQueued = useCallback(
     (promptId: string) => {
-      onEditQueuedPrompt(promptId)
+      const nextInput = onEditQueuedPrompt(promptId, input)
+      if (nextInput === null) {
+        return
+      }
+
+      setInput(nextInput)
       requestAnimationFrame(() => textareaRef.current?.focus())
     },
-    [onEditQueuedPrompt],
+    [input, onEditQueuedPrompt],
   )
 
   return (
@@ -87,7 +112,7 @@ export function ChatComposer({
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => handleChange(e.target.value)}
-                  onKeyDown={onKeyDown}
+                  onKeyDown={handleKeyDown}
                   onScroll={handleScroll}
                   placeholder={isStreaming ? 'queue another message' : 'type here'}
                   rows={1}
@@ -178,7 +203,7 @@ export function ChatComposer({
                       ? 'text-[var(--term-blue)] hover:bg-[var(--term-surface-soft)]'
                       : 'text-[var(--term-dim)]'
                   }`}
-                  onClick={onSubmit}
+                  onClick={() => void handleSubmit()}
                   disabled={!hasInput}
                   title="Send"
                 >

@@ -1,4 +1,3 @@
-import type { KeyboardEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Block, ChatConfig, Message, MessageStatus, QueuedPromptDraft } from '@/types/chat'
@@ -10,16 +9,14 @@ interface QueuedPrompt extends QueuedPromptDraft {
 interface UseAgentChatResult {
   config: ChatConfig | null
   messages: Message[]
-  input: string
   isStreaming: boolean
   queuedCount: number
   queuedPrompts: QueuedPromptDraft[]
   currentSessionPath: string | null
-  setInput: (value: string) => void
+  composerResetToken: number
   handleAbort: () => Promise<void>
-  handleInputKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void
-  handleSubmit: () => Promise<void>
-  handleEditQueuedPrompt: (promptId: string) => void
+  handleSubmitPrompt: (text: string) => Promise<boolean>
+  handleEditQueuedPrompt: (promptId: string, currentDraft: string) => string | null
   handleRemoveQueuedPrompt: (promptId: string) => void
   handleNewSession: () => Promise<void>
   handleResumeSession: (sessionPath: string) => Promise<void>
@@ -28,11 +25,11 @@ interface UseAgentChatResult {
 
 export function useAgentChat(): UseAgentChatResult {
   const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [queuedPrompts, setQueuedPrompts] = useState<QueuedPromptDraft[]>([])
   const [config, setConfig] = useState<ChatConfig | null>(null)
   const [currentSessionPath, setCurrentSessionPath] = useState<string | null>(null)
+  const [composerResetToken, setComposerResetToken] = useState(0)
 
   const isStreamingRef = useRef(false)
   const activeAssistantIdRef = useRef<string | null>(null)
@@ -46,6 +43,9 @@ export function useAgentChat(): UseAgentChatResult {
 
   const createMessageId = useCallback(() => `msg-${crypto.randomUUID()}`, [])
   const queuedCount = queuedPrompts.length
+  const resetComposer = useCallback(() => {
+    setComposerResetToken((value) => value + 1)
+  }, [])
   const loadConfig = useCallback(async () => {
     const nextConfig = await window.api.getConfig()
     setConfig(nextConfig)
@@ -314,6 +314,7 @@ export function useAgentChat(): UseAgentChatResult {
         clearQueuedPrompts()
         setMessages([])
         setIsStreaming(false)
+        resetComposer()
       }),
     ]
 
@@ -327,52 +328,56 @@ export function useAgentChat(): UseAgentChatResult {
     cancelPendingRaf,
     clearQueuedPrompts,
     processNextPrompt,
+    resetComposer,
     setAssistantStatus,
     updateCurrentAssistantBlocks,
   ])
 
-  const handleSubmit = useCallback(async () => {
-    const text = input.trim()
-    if (!text) {
-      return
-    }
+  const handleSubmitPrompt = useCallback(
+    async (rawText: string) => {
+      const text = rawText.trim()
+      if (!text) {
+        return false
+      }
 
-    setInput('')
-    const prompt: QueuedPrompt = {
-      id: createMessageId(),
-      assistantId: createMessageId(),
-      text,
-    }
+      const prompt: QueuedPrompt = {
+        id: createMessageId(),
+        assistantId: createMessageId(),
+        text,
+      }
 
-    if (isStreamingRef.current || promptQueueRef.current.length > 0) {
-      enqueuePrompt(prompt)
-      return
-    }
+      if (isStreamingRef.current || promptQueueRef.current.length > 0) {
+        enqueuePrompt(prompt)
+        return true
+      }
 
-    startPrompt(prompt)
-  }, [createMessageId, enqueuePrompt, input, startPrompt])
+      startPrompt(prompt)
+      return true
+    },
+    [createMessageId, enqueuePrompt, startPrompt],
+  )
 
   const handleEditQueuedPrompt = useCallback(
-    (promptId: string) => {
+    (promptId: string, currentDraft: string) => {
       const promptIndex = promptQueueRef.current.findIndex((prompt) => prompt.id === promptId)
-      if (promptIndex < 0) return
+      if (promptIndex < 0) return null
 
       const queuedPrompt = promptQueueRef.current[promptIndex]
       const rest = promptQueueRef.current.filter((prompt) => prompt.id !== promptId)
-      const currentDraft = input.trim()
-      if (currentDraft) {
+      const trimmedDraft = currentDraft.trim()
+      if (trimmedDraft) {
         rest.splice(promptIndex, 0, {
           id: createMessageId(),
           assistantId: createMessageId(),
-          text: currentDraft,
+          text: trimmedDraft,
         })
       }
 
       promptQueueRef.current = rest
       setQueuedPrompts(rest.map(({ id, text }) => ({ id, text })))
-      setInput(queuedPrompt.text)
+      return queuedPrompt.text
     },
-    [createMessageId, input],
+    [createMessageId],
   )
 
   const handleRemoveQueuedPrompt = useCallback((promptId: string) => {
@@ -390,7 +395,8 @@ export function useAgentChat(): UseAgentChatResult {
     clearQueuedPrompts()
     await window.api.newSession()
     setCurrentSessionPath(null)
-  }, [clearQueuedPrompts])
+    resetComposer()
+  }, [clearQueuedPrompts, resetComposer])
 
   const handleResumeSession = useCallback(
     async (sessionPath: string) => {
@@ -408,11 +414,12 @@ export function useAgentChat(): UseAgentChatResult {
         )
         setIsStreaming(false)
         setCurrentSessionPath(sessionPath)
+        resetComposer()
       } catch (error) {
         console.error('Failed to resume session:', error)
       }
     },
-    [isStreaming, cancelPendingRaf, clearQueuedPrompts, createMessageId],
+    [isStreaming, cancelPendingRaf, clearQueuedPrompts, createMessageId, resetComposer],
   )
 
   const handleDeleteSession = useCallback(
@@ -440,28 +447,16 @@ export function useAgentChat(): UseAgentChatResult {
     prevMessagesLen.current = messages.length
   }, [messages.length, currentSessionPath])
 
-  const handleInputKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-        event.preventDefault()
-        void handleSubmit()
-      }
-    },
-    [handleSubmit],
-  )
-
   return {
     config,
     messages,
-    input,
     isStreaming,
     queuedCount,
     queuedPrompts,
     currentSessionPath,
-    setInput,
+    composerResetToken,
     handleAbort,
-    handleInputKeyDown,
-    handleSubmit,
+    handleSubmitPrompt,
     handleEditQueuedPrompt,
     handleRemoveQueuedPrompt,
     handleNewSession,

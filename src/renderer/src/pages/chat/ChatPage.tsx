@@ -8,28 +8,22 @@ import { HeaderBar } from '@/pages/chat/components/HeaderBar'
 import { SessionList } from '@/pages/chat/components/SessionList'
 import { SetupRequiredState } from '@/pages/chat/components/SetupRequiredState'
 
-export function ChatPage({
-  onOpenSettings,
-}: {
-  onOpenSettings: () => void
-}): ReactElement | null {
+export function ChatPage({ onOpenSettings }: { onOpenSettings: () => void }): ReactElement | null {
   const {
     config,
+    composerResetToken,
     currentSessionPath,
     handleAbort,
     handleDeleteSession,
     handleEditQueuedPrompt,
-    handleInputKeyDown,
     handleNewSession,
     handleRemoveQueuedPrompt,
     handleResumeSession,
-    handleSubmit,
-    input,
+    handleSubmitPrompt,
     isStreaming,
     messages,
     queuedCount,
     queuedPrompts,
-    setInput,
   } = useAgentChat()
   const scrollRef = useAutoScroll([messages])
 
@@ -42,10 +36,10 @@ export function ChatPage({
       <aside className="h-full w-[236px] shrink-0 overflow-hidden border-r border-[var(--term-border)] bg-[var(--term-panel)]">
         <SessionList
           variant="panel"
-          onNewSession={() => void handleNewSession()}
+          onNewSession={handleNewSession}
           onSettingsClick={onOpenSettings}
-          onResume={(path) => void handleResumeSession(path)}
-          onDelete={(path) => void handleDeleteSession(path)}
+          onResume={handleResumeSession}
+          onDelete={handleDeleteSession}
           currentSessionPath={currentSessionPath}
         />
       </aside>
@@ -59,17 +53,15 @@ export function ChatPage({
           <>
             <ChatTranscript isStreaming={isStreaming} messages={messages} scrollRef={scrollRef} />
             <ChatComposer
-              input={input}
+              key={composerResetToken}
               isStreaming={isStreaming}
               queuedCount={queuedCount}
               queuedPrompts={queuedPrompts}
-              onAbort={() => void handleAbort()}
-              onChange={setInput}
+              onAbort={handleAbort}
               onEditQueuedPrompt={handleEditQueuedPrompt}
-              onKeyDown={handleInputKeyDown}
               onRemoveQueuedPrompt={handleRemoveQueuedPrompt}
               onSettingsClick={onOpenSettings}
-              onSubmit={() => void handleSubmit()}
+              onSubmit={handleSubmitPrompt}
             />
           </>
         )}
