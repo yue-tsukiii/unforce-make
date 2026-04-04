@@ -37,6 +37,12 @@ export interface PreferenceMemory {
   updatedAt: string
 }
 
+export interface PreferenceMemoryUpdateInput {
+  id: string
+  reason?: string | null
+  value: string
+}
+
 interface ExtractionCandidate {
   key: string
   value: string
@@ -247,6 +253,10 @@ export class PreferenceMemoryService {
     }))
   }
 
+  listManageablePreferences(): PreferenceMemory[] {
+    return this.listActivePreferences(100)
+  }
+
   getPromptContext(limit = 8): { ids: string[]; text: string } {
     const memories = this.listActivePreferences(limit)
     if (memories.length === 0) {
@@ -275,6 +285,85 @@ export class PreferenceMemoryService {
       stmt.run(now, memoryId)
       this.insertEvent(memoryId, 'applied', { at: now })
     }
+  }
+
+  updatePreference({ id, reason, value }: PreferenceMemoryUpdateInput): void {
+    const current = this.db
+      .prepare(
+        `
+          SELECT id, value_json, reason, evidence_count
+          FROM memory_items
+          WHERE id = ?
+            AND kind = 'preference'
+            AND scope = 'user'
+            AND status = 'active'
+        `,
+      )
+      .get(id) as unknown as
+      | { id: string; value_json: string; reason: string | null; evidence_count: number }
+      | undefined
+
+    if (!current) {
+      throw new Error('Memory item not found')
+    }
+
+    const normalizedValue = normalizeValue(value)
+    if (!normalizedValue) {
+      throw new Error('Memory value cannot be empty')
+    }
+
+    const now = new Date().toISOString()
+    this.db
+      .prepare(
+        `
+          UPDATE memory_items
+          SET value_json = ?,
+              reason = ?,
+              updated_at = ?
+          WHERE id = ?
+        `,
+      )
+      .run(JSON.stringify(normalizedValue), reason?.trim() || null, now, id)
+
+    this.insertEvent(id, 'edited', {
+      nextReason: reason?.trim() || null,
+      nextValue: normalizedValue,
+      previousReason: current.reason,
+      previousValue: JSON.parse(current.value_json) as string,
+    })
+  }
+
+  deletePreference(id: string): void {
+    const current = this.db
+      .prepare(
+        `
+          SELECT id
+          FROM memory_items
+          WHERE id = ?
+            AND kind = 'preference'
+            AND scope = 'user'
+            AND status = 'active'
+        `,
+      )
+      .get(id) as unknown as { id: string } | undefined
+
+    if (!current) {
+      throw new Error('Memory item not found')
+    }
+
+    const now = new Date().toISOString()
+    this.db
+      .prepare(
+        `
+          UPDATE memory_items
+          SET status = 'deleted',
+              updated_at = ?
+          WHERE id = ?
+        `,
+      )
+      .run(now, id)
+
+    this.insertEvent(id, 'deleted', { origin: 'manual' })
   }
 
   async curateTurn({

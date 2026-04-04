@@ -69,6 +69,12 @@ contextBridge.exposeInMainWorld('api', {
   setActiveModel: (providerId: string, modelId: string): Promise<void> =>
     ipcRenderer.invoke('model:set-active', providerId, modelId),
 
+  // --- Memory management ---
+  listMemory: (): Promise<unknown[]> => ipcRenderer.invoke('memory:list'),
+  updateMemory: (memory: { id: string; value: string; reason?: string | null }): Promise<void> =>
+    ipcRenderer.invoke('memory:update', memory),
+  deleteMemory: (id: string): Promise<void> => ipcRenderer.invoke('memory:delete', id),
+
   // Provider config change events
   onConfigChanged: (cb: () => void) => onChannel('provider:config-changed', cb),
 })

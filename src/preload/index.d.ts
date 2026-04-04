@@ -7,6 +7,17 @@ interface SessionSummary {
   firstMessage: string
 }
 
+interface PreferenceMemorySummary {
+  id: string
+  key: string
+  value: string
+  sourceType: 'explicit' | 'inferred'
+  confidence: number
+  reason: string | null
+  evidenceCount: number
+  updatedAt: string
+}
+
 interface AgentAPI {
   // Agent session
   prompt: (text: string) => Promise<void>
@@ -51,6 +62,11 @@ interface AgentAPI {
   getModels: () => Promise<unknown[]>
   getActiveModel: () => Promise<string | null>
   setActiveModel: (providerId: string, modelId: string) => Promise<void>
+
+  // Memory management
+  listMemory: () => Promise<PreferenceMemorySummary[]>
+  updateMemory: (memory: { id: string; value: string; reason?: string | null }) => Promise<void>
+  deleteMemory: (id: string) => Promise<void>
 
   // Config change events
   onConfigChanged: (cb: () => void) => () => void

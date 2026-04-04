@@ -2,7 +2,10 @@ import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { AgentService } from './agent'
-import { PreferenceMemoryService } from './memory/preference-memory-service'
+import {
+  PreferenceMemoryService,
+  type PreferenceMemoryUpdateInput,
+} from './memory/preference-memory-service'
 import { ConfigService } from './providers/config-service'
 import { ProviderRegistry } from './providers/registry'
 
@@ -262,6 +265,25 @@ function registerIpcHandlers(): void {
     return {
       hasApiKey: configService.getProviders().some((p) => p.apiKey),
     }
+  })
+
+  ipcMain.handle('memory:list', () => {
+    ensureAgentService()
+    return memoryService?.listManageablePreferences() ?? []
+  })
+
+  ipcMain.handle('memory:update', (_event, input: PreferenceMemoryUpdateInput) => {
+    if (!memoryService) {
+      throw new Error('Memory service unavailable')
+    }
+    memoryService.updatePreference(input)
+  })
+
+  ipcMain.handle('memory:delete', (_event, id: string) => {
+    if (!memoryService) {
+      throw new Error('Memory service unavailable')
+    }
+    memoryService.deletePreference(id)
   })
 }
 
