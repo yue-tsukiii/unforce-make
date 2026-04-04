@@ -18,6 +18,7 @@ import {
   SessionManager,
 } from '@mariozechner/pi-coding-agent'
 import { app, type BrowserWindow } from 'electron'
+import type { PreferenceMemoryService } from './memory/preference-memory-service'
 import type { ConfigService } from './providers/config-service'
 import type { ProviderRegistry } from './providers/registry'
 import { parseModelKey } from './providers/types'
@@ -57,7 +58,12 @@ export class AgentService {
   private window: BrowserWindow
   private registry: ProviderRegistry
   private configService: ConfigService
+  private memoryService: PreferenceMemoryService
   private currentModelKey: string | null = null
+  private modelRegistry: ModelRegistry | null = null
+  private currentMemoryContext = ''
+  private currentInjectedMemoryIds: string[] = []
+  private activeTurn: { userText: string; assistantText: string } | null = null
 
   private get cwd() {
     return app.getPath('home')
@@ -67,10 +73,16 @@ export class AgentService {
     return join(app.getPath('userData'), 'sessions')
   }
 
-  constructor(window: BrowserWindow, registry: ProviderRegistry, configService: ConfigService) {
+  constructor(
+    window: BrowserWindow,
+    registry: ProviderRegistry,
+    configService: ConfigService,
+    memoryService: PreferenceMemoryService,
+  ) {
     this.window = window
     this.registry = registry
     this.configService = configService
+    this.memoryService = memoryService
   }
 
   async prompt(text: string): Promise<void> {
@@ -80,15 +92,38 @@ export class AgentService {
         await this.initSession()
         console.log('[agent] session initialized')
       }
+      const memoryContext = this.memoryService.getPromptContext()
+      this.currentMemoryContext = memoryContext.text
+      this.currentInjectedMemoryIds = memoryContext.ids
+      this.activeTurn = { userText: text, assistantText: '' }
       console.log('[agent] prompting:', text.slice(0, 100))
       await this.session.prompt(text)
       console.log('[agent] prompt complete')
+      this.memoryService.markApplied(this.currentInjectedMemoryIds)
+
+      if (this.activeTurn && this.modelRegistry) {
+        const turn = this.activeTurn
+        const model = this.resolveModel()
+        void this.memoryService
+          .curateTurn({
+            assistantText: turn.assistantText,
+            model,
+            modelRegistry: this.modelRegistry,
+            userText: turn.userText,
+          })
+          .catch((error) => {
+            console.error('[memory] curation failed:', error)
+          })
+      }
     } catch (err) {
       console.error('[agent] error:', err)
       this.send('agent:error', {
         message: err instanceof Error ? err.message : String(err),
       })
     } finally {
+      this.currentMemoryContext = ''
+      this.currentInjectedMemoryIds = []
+      this.activeTurn = null
       this.send('agent:complete')
     }
   }
@@ -190,6 +225,8 @@ export class AgentService {
 
     const resourceLoader = new DefaultResourceLoader({
       cwd: this.cwd,
+      appendSystemPromptOverride: (base) =>
+        this.currentMemoryContext ? [...base, this.currentMemoryContext] : base,
       systemPromptOverride: () => SYSTEM_PROMPT,
       noExtensions: true,
       noSkills: false,
@@ -206,6 +243,7 @@ export class AgentService {
       }
     }
     const modelRegistry = ModelRegistry.create(authStorage)
+    this.modelRegistry = modelRegistry
 
     const { session } = await createAgentSession({
       model,
@@ -241,6 +279,10 @@ export class AgentService {
     this.session?.dispose()
     this.session = null as never
     this.unsubscribe = null
+    this.modelRegistry = null
+    this.currentMemoryContext = ''
+    this.currentInjectedMemoryIds = []
+    this.activeTurn = null
   }
 
   private buildUIMessages(sessionManager: SessionManager): UIMessage[] {
@@ -320,6 +362,9 @@ export class AgentService {
         const e = event.assistantMessageEvent
         switch (e.type) {
           case 'text_delta':
+            if (this.activeTurn) {
+              this.activeTurn.assistantText += e.delta
+            }
             this.send('agent:text-delta', e.delta)
             break
           case 'thinking_delta':

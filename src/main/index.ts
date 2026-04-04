@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { AgentService } from './agent'
+import { PreferenceMemoryService } from './memory/preference-memory-service'
 import { ConfigService } from './providers/config-service'
 import { ProviderRegistry } from './providers/registry'
 
@@ -14,6 +15,7 @@ const registry = new ProviderRegistry(configService)
 
 let mainWindow: BrowserWindow | null = null
 let agentService: AgentService | null = null
+let memoryService: PreferenceMemoryService | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -41,10 +43,16 @@ function createWindow(): void {
 }
 
 function ensureAgentService(): AgentService {
-  if (!agentService && mainWindow) {
-    agentService = new AgentService(mainWindow, registry, configService)
+  if (!memoryService) {
+    memoryService = new PreferenceMemoryService()
   }
-  return agentService!
+  if (!agentService && mainWindow) {
+    agentService = new AgentService(mainWindow, registry, configService, memoryService)
+  }
+  if (!agentService) {
+    throw new Error('Agent service is unavailable before the main window is created')
+  }
+  return agentService
 }
 
 function registerIpcHandlers(): void {
@@ -198,7 +206,7 @@ function registerIpcHandlers(): void {
         })
       }
 
-      const response = await fetch(url!, fetchOptions)
+      const response = await fetch(url, fetchOptions)
 
       if (response.ok) {
         return { success: true }
@@ -273,4 +281,5 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   agentService?.destroy()
+  memoryService?.destroy()
 })
