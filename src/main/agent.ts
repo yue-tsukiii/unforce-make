@@ -68,6 +68,7 @@ export class AgentService {
   private activeTurn: { userText: string; assistantText: string } | null = null
 
   private get cwd() {
+    console.log('[agent] cwd:', app.getPath('home'))
     return app.getPath('home')
   }
 
@@ -258,6 +259,7 @@ export class AgentService {
       cwd: this.cwd,
       getWebSearchConfig: () => this.configService.getWebSearchConfig(),
     })
+
     if (customTools.length > 0) {
       console.log('[agent] Custom tools enabled:', customTools.map((t) => t.name).join(', '))
     }
@@ -401,8 +403,9 @@ export class AgentService {
     return uiMessages
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private handleEvent(event: any): void {
+    console.log('--------------------------------')
+    console.log('[agent] event:', event)
     if (event.type === 'message_update') {
       console.log('[agent] event:', event.type, '→', event.assistantMessageEvent?.type)
     } else {

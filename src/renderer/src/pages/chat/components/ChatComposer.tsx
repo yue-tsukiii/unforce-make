@@ -81,22 +81,44 @@ export function ChatComposer({
       <div className="mx-auto max-w-3xl">
         <div className={`composer-wrapper${isTyping ? ' is-typing' : ''}`}>
           <div className="composer-inner rounded-lg bg-[var(--term-surface)]">
-            <div className="composer-toolbar flex min-w-0 items-center gap-3 px-3 py-2">
-              <ModelSelector onSettingsClick={onSettingsClick} variant="composer" />
-              {queuedCount > 0 && (
-                <span className="hidden shrink-0 text-[11px] text-[var(--term-dim)] sm:inline">
-                  {queuedCount} queued
-                </span>
-              )}
+            <div className="px-3 pb-1 pt-3">
+              <div className="relative min-w-0 flex-1">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => handleChange(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  onScroll={handleScroll}
+                  placeholder={isStreaming ? 'queue another message' : 'type here'}
+                  rows={1}
+                  className="max-h-[120px] min-h-[20px] w-full resize-none bg-transparent p-0 text-[13px] text-transparent caret-[var(--term-blue)] outline-none placeholder:text-[var(--term-dim)]"
+                  style={{ fieldSizing: 'content' } as CSSProperties}
+                />
+
+                {input.length > 0 && (
+                  <div
+                    ref={mirrorRef}
+                    className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words text-[13px] leading-[1.6] text-[var(--term-text)]"
+                    aria-hidden="true"
+                  >
+                    <span>{input.slice(0, animateFrom)}</span>
+                    {animateFrom < input.length && (
+                      <span key={animateFrom} className="char-new">
+                        {input.slice(animateFrom)}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {queuedPrompts.length > 0 && (
-              <div className="px-3 pb-1">
+              <div className="px-5 pb-2 sm:px-6">
                 <div className="space-y-1.5">
                   {queuedPrompts.map((prompt) => (
                     <div
                       key={prompt.id}
-                      className="queued-draft-card flex items-center gap-2 px-0.5 py-0.5 text-[12px] text-[var(--term-text)]"
+                      className="queued-draft-card flex items-center gap-2 rounded-2xl border border-[var(--term-border)] bg-[var(--term-surface-soft)] px-3 py-2 text-[12px] text-[var(--term-text)]"
                     >
                       <span className="shrink-0 text-[11px] text-[var(--term-dim)]">↳</span>
                       <div
@@ -129,38 +151,15 @@ export function ChatComposer({
               </div>
             )}
 
-            <div className="flex items-end gap-2 px-3 py-2">
-              <div className="relative min-w-0 flex-1">
-                {/* Real textarea — text transparent, caret visible */}
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => handleChange(e.target.value)}
-                  onKeyDown={onKeyDown}
-                  onScroll={handleScroll}
-                  placeholder={isStreaming ? 'queue another message' : 'type here'}
-                  rows={1}
-                  className="max-h-[120px] min-h-[20px] w-full resize-none bg-transparent p-0 text-[13px] text-transparent caret-[var(--term-blue)] outline-none placeholder:text-[var(--term-dim)]"
-                  style={{ fieldSizing: 'content' } as CSSProperties}
-                />
-
-                {/* Mirror overlay — renders animated characters */}
-                {input.length > 0 && (
-                  <div
-                    ref={mirrorRef}
-                    className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words text-[13px] leading-[1.6] text-[var(--term-text)]"
-                    aria-hidden="true"
-                  >
-                    <span>{input.slice(0, animateFrom)}</span>
-                    {animateFrom < input.length && (
-                      <span key={animateFrom} className="char-new">
-                        {input.slice(animateFrom)}
-                      </span>
-                    )}
-                  </div>
-                )}
+            <div className="composer-footer flex items-center gap-2 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <ModelSelector onSettingsClick={onSettingsClick} variant="composer" />
               </div>
-
+              {queuedCount > 0 && (
+                <span className="hidden shrink-0 text-[11px] text-[var(--term-dim)] sm:inline">
+                  {queuedCount} queued
+                </span>
+              )}
               <div className="flex shrink-0 items-center gap-2">
                 {isStreaming && (
                   <button

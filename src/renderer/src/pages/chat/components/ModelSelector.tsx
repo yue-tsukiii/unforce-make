@@ -133,13 +133,6 @@ export function ModelSelector({
                 <span className="min-w-0 flex-1 truncate text-[var(--term-text)]">
                   {displayName}
                 </span>
-                {activeModel && (
-                  <div className="hidden shrink-0 items-center gap-1 text-[10px] text-[var(--term-dim)] md:flex">
-                    {activeModel.toolUse && <span>tools</span>}
-                    {activeModel.reasoning && <span>think</span>}
-                    <span>{formatContext(activeModel.contextWindow)}</span>
-                  </div>
-                )}
               </div>
             ) : (
               <span className="max-w-[180px] truncate">{displayName}</span>

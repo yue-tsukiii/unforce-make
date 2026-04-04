@@ -130,9 +130,8 @@ button {
   content: none;
 }
 
-.composer-toolbar {
-  border-top-left-radius: calc(var(--composer-radius) - 1px);
-  border-top-right-radius: calc(var(--composer-radius) - 1px);
+.composer-footer {
+  border-top: none;
   background: transparent;
 }
 
@@ -163,7 +162,7 @@ button {
 }
 
 .char-new {
-  animation: char-enter 0.18s ease-out backwards;
+  animation: char-enter 0.14s ease-out backwards;
 }
 
 /* ─── Animations ────────────────────────────────── */
