@@ -37,6 +37,7 @@ contextBridge.exposeInMainWorld('api', {
     }>
   > => ipcRenderer.invoke('agent:resume-session', sessionPath),
   getCurrentSession: (): Promise<string | null> => ipcRenderer.invoke('agent:current-session'),
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),
   deleteSession: (sessionPath: string): Promise<void> =>
     ipcRenderer.invoke('agent:delete-session', sessionPath),
 

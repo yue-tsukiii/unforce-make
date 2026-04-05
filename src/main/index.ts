@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { AgentService } from './agent'
 import {
   PreferenceMemoryService,
@@ -20,6 +20,28 @@ let mainWindow: BrowserWindow | null = null
 let agentService: AgentService | null = null
 let memoryService: PreferenceMemoryService | null = null
 
+function isAppUrl(url: string): boolean {
+  if (url.startsWith('file://')) {
+    return true
+  }
+
+  if (is.dev) {
+    return url.startsWith(DEV_RENDERER_URL)
+  }
+
+  return false
+}
+
+async function openExternalUrl(url: string): Promise<void> {
+  const parsed = new URL(url)
+
+  if (!['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
+    throw new Error(`Unsupported external URL protocol: ${parsed.protocol}`)
+  }
+
+  await shell.openExternal(parsed.toString())
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 900,
@@ -37,6 +59,25 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => mainWindow?.show())
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (!isAppUrl(url)) {
+      void openExternalUrl(url).catch((error) => {
+        console.error('Failed to open external URL from new window request:', error)
+      })
+      return { action: 'deny' }
+    }
+
+    return { action: 'allow' }
+  })
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!isAppUrl(url)) {
+      event.preventDefault()
+      void openExternalUrl(url).catch((error) => {
+        console.error('Failed to open external URL from navigation request:', error)
+      })
+    }
+  })
 
   if (is.dev) {
     mainWindow.loadURL(DEV_RENDERER_URL)
@@ -109,6 +150,10 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('agent:current-session', () => {
     return agentService?.getCurrentSessionFile() ?? null
+  })
+
+  ipcMain.handle('shell:open-external', async (_event, url: string) => {
+    await openExternalUrl(url)
   })
 
   ipcMain.handle('agent:delete-session', async (_event, sessionPath: string) => {

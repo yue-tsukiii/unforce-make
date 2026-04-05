@@ -35,6 +35,7 @@ interface AgentAPI {
     }>
   >
   getCurrentSession: () => Promise<string | null>
+  openExternal: (url: string) => Promise<void>
   deleteSession: (sessionPath: string) => Promise<void>
 
   // Agent push events

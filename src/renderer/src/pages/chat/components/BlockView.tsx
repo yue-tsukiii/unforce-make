@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import type { ComponentProps, ReactElement } from 'react'
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
@@ -9,6 +9,21 @@ import { formatArgs } from '@/utils/formatArgs'
 
 const remarkPlugins = [remarkGfm]
 const rehypePlugins = [rehypeHighlight]
+const markdownComponents = {
+  a: ({ href, ...props }: ComponentProps<'a'>): ReactElement => {
+    const handleClick = (event: React.MouseEvent<HTMLAnchorElement>): void => {
+      event.preventDefault()
+
+      if (!href) {
+        return
+      }
+
+      void window.api.openExternal(href)
+    }
+
+    return <a {...props} href={href} onClick={handleClick} target="_blank" rel="noreferrer" />
+  },
+}
 
 export function BlockView({
   block,
@@ -22,7 +37,11 @@ export function BlockView({
   if (block.type === 'text') {
     return (
       <div className="markdown-body text-[13px] text-[var(--term-text)]">
-        <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
+        <ReactMarkdown
+          remarkPlugins={remarkPlugins}
+          rehypePlugins={rehypePlugins}
+          components={markdownComponents}
+        >
           {block.content}
         </ReactMarkdown>
       </div>
@@ -44,7 +63,11 @@ export function BlockView({
         </summary>
         <div className="mt-2 border-l border-[var(--term-border-strong)] pl-3">
           <div className="markdown-body text-[12px] leading-relaxed text-[var(--term-text-soft)]">
-            <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
+            <ReactMarkdown
+              remarkPlugins={remarkPlugins}
+              rehypePlugins={rehypePlugins}
+              components={markdownComponents}
+            >
               {block.content}
             </ReactMarkdown>
           </div>
