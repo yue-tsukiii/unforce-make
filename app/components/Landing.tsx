@@ -1,26 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useI18n } from "@/lib/i18n";
+import { AgentPanel } from "./AgentPanel";
 import { CursorSpotlight } from "./CursorSpotlight";
+import { DeveloperPanel } from "./DeveloperPanel";
+import { LanguageToggle } from "./LanguageToggle";
 import { MagneticButton } from "./MagneticButton";
 import { Tabs, type TabItem } from "./Tabs";
-import { AgentPanel } from "./AgentPanel";
-import { DeveloperPanel } from "./DeveloperPanel";
-
-const tabs: TabItem[] = [
-  {
-    id: "agent",
-    label: "Talk to the Agent",
-    icon: <SparkleIcon />,
-    content: <AgentPanel />,
-  },
-  {
-    id: "dev",
-    label: "For Developers",
-    icon: <CodeIcon />,
-    content: <DeveloperPanel />,
-  },
-];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
@@ -28,13 +15,33 @@ const fadeUp = {
 };
 
 export function Landing() {
+  const { t, locale } = useI18n();
+
+  const tabs: TabItem[] = [
+    {
+      id: "agent",
+      label: t.tabs.agent,
+      icon: <SparkleIcon />,
+      content: <AgentPanel />,
+    },
+    {
+      id: "dev",
+      label: t.tabs.dev,
+      icon: <CodeIcon />,
+      content: <DeveloperPanel />,
+    },
+  ];
+
   return (
-    <main className="relative z-[3] min-h-screen">
+    <main
+      key={locale}
+      className="relative z-[3] min-h-screen"
+    >
       <CursorSpotlight />
       <div className="grid-bg pointer-events-none absolute inset-x-0 top-0 h-[900px]" />
 
       {/* Nav */}
-      <header className="relative mx-auto flex max-w-7xl items-center justify-between px-6 pt-8 lg:px-10">
+      <header className="relative mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 pt-8 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -54,13 +61,13 @@ export function Landing() {
           className="hidden items-center gap-8 font-mono text-xs uppercase tracking-[0.18em] text-white/50 md:flex"
         >
           <a href="#product" className="hover:text-white">
-            Product
+            {t.nav.product}
           </a>
           <a href="#architecture" className="hover:text-white">
-            Architecture
+            {t.nav.architecture}
           </a>
           <a href="#team" className="hover:text-white">
-            Team
+            {t.nav.team}
           </a>
         </motion.nav>
 
@@ -68,16 +75,21 @@ export function Landing() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15 }}
+          className="flex items-center gap-3"
         >
-          <MagneticButton className="!px-5 !py-2.5 text-xs">
-            Join the Beta
-          </MagneticButton>
+          <LanguageToggle />
+          <div className="hidden sm:block">
+            <MagneticButton className="!px-5 !py-2.5 text-xs">
+              {t.nav.cta}
+            </MagneticButton>
+          </div>
         </motion.div>
       </header>
 
       {/* Hero */}
       <section className="relative mx-auto max-w-7xl px-6 pt-24 pb-20 lg:px-10 lg:pt-32">
         <motion.div
+          key={`hero-${locale}`}
           initial="hidden"
           animate="show"
           variants={{ show: { transition: { staggerChildren: 0.1 } } }}
@@ -89,7 +101,7 @@ export function Landing() {
             className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-white/60 backdrop-blur-md"
           >
             <span className="pulse-dot block h-1.5 w-1.5 rounded-full bg-[color:var(--accent-2)]" />
-            Team Unforce Make · Hackathon 2026
+            {t.hero.badge}
           </motion.div>
 
           <motion.h1
@@ -97,9 +109,9 @@ export function Landing() {
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="font-display mt-8 text-[clamp(2.75rem,7vw,6.25rem)] font-medium leading-[0.95] tracking-[-0.04em]"
           >
-            <span className="text-gradient">Snap the blocks.</span>
+            <span className="text-gradient">{t.hero.titleA}</span>
             <br />
-            <span className="text-white">Talk to the room.</span>
+            <span className="text-white">{t.hero.titleB}</span>
           </motion.h1>
 
           <motion.p
@@ -107,11 +119,8 @@ export function Landing() {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="mt-8 max-w-2xl text-lg leading-relaxed text-white/60"
           >
-            Unforce Make is a modular IoT blocks platform. Magnetic POGO-pin
-            hardware joins a single Wi-Fi mesh in seconds, a local Host routes
-            MQTT, UDP and WebSocket traffic, and a Claude-powered Agent
-            understands the whole room — so your space can finally{" "}
-            <span className="text-white">listen, see, and act</span>.
+            {t.hero.desc1}{" "}
+            <span className="text-white">{t.hero.desc2}</span>.
           </motion.p>
 
           <motion.div
@@ -120,23 +129,17 @@ export function Landing() {
             className="mt-10 flex flex-wrap items-center gap-4"
           >
             <MagneticButton>
-              Try the live demo <ArrowIcon />
+              {t.hero.primary} <ArrowIcon />
             </MagneticButton>
-            <MagneticButton variant="ghost">Read the docs</MagneticButton>
+            <MagneticButton variant="ghost">{t.hero.secondary}</MagneticButton>
           </motion.div>
 
-          {/* Stats strip */}
           <motion.div
             variants={fadeUp}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="mt-16 grid grid-cols-2 gap-8 border-t border-white/10 pt-8 sm:grid-cols-4"
           >
-            {[
-              { k: "< 3s", v: "block plug-and-play" },
-              { k: "7", v: "hardware modules" },
-              { k: "4", v: "protocol lanes" },
-              { k: "100%", v: "runs on-device" },
-            ].map((s) => (
+            {t.hero.stats.map((s) => (
               <div key={s.v}>
                 <div className="font-display text-3xl font-medium text-white">
                   {s.k}
@@ -163,16 +166,13 @@ export function Landing() {
           className="mb-14 flex flex-col items-center text-center"
         >
           <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
-            Two ways in
+            {t.tabsSection.eyebrow}
           </span>
           <h2 className="font-display mt-4 max-w-3xl text-[clamp(2rem,4.5vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.03em]">
-            One room. One platform.{" "}
-            <span className="text-gradient">Two surfaces.</span>
+            {t.tabsSection.titleA}{" "}
+            <span className="text-gradient">{t.tabsSection.titleB}</span>
           </h2>
-          <p className="mt-5 max-w-2xl text-white/50">
-            End-users come in through the Agent. Developers come in through the
-            protocol. Same brain, different entry points.
-          </p>
+          <p className="mt-5 max-w-2xl text-white/50">{t.tabsSection.desc}</p>
         </motion.div>
 
         <Tabs items={tabs} />
@@ -190,23 +190,7 @@ export function Landing() {
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="grid gap-6 lg:grid-cols-3"
         >
-          {[
-            {
-              k: "01",
-              t: "Hardware Layer",
-              d: "ESP32-S3 for vision/voice streams. ESP32-C3 for low-power sensors and actuators. POGO-pin magnetic docks for instant mesh join.",
-            },
-            {
-              k: "02",
-              t: "Host Layer",
-              d: "Python asyncio runtime. MQTT broker, UDP server, WebSocket server. Event bus, node registry, port pool, AI pipeline.",
-            },
-            {
-              k: "03",
-              t: "Agent Layer",
-              d: "Claude 4.6 as the reasoning core. Multi-modal context over sensors, vision and voice. Executes via MQTT commands.",
-            },
-          ].map((c, i) => (
+          {t.arch.cards.map((c, i) => (
             <motion.div
               key={c.k}
               initial={{ opacity: 0, y: 24 }}
@@ -241,23 +225,20 @@ export function Landing() {
             <div>
               <div className="font-display text-lg font-medium">unforce make</div>
               <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
-                Hackathon · 2026
+                {t.footer.subtitle}
               </div>
             </div>
           </div>
-          <p className="max-w-md text-sm text-white/40">
-            Built in 48 hours with ESP32s, Mosquitto, asyncio, Next.js and
-            Claude. Everything runs on your own hardware.
-          </p>
+          <p className="max-w-md text-sm text-white/40">{t.footer.blurb}</p>
           <div className="flex gap-4 font-mono text-xs uppercase tracking-[0.2em] text-white/50">
             <a href="#" className="hover:text-white">
-              GitHub
+              {t.footer.github}
             </a>
             <a href="#" className="hover:text-white">
-              Docs
+              {t.footer.docs}
             </a>
             <a href="#" className="hover:text-white">
-              Contact
+              {t.footer.contact}
             </a>
           </div>
         </div>

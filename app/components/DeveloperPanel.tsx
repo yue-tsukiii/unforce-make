@@ -1,13 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { SpotlightCard } from "./SpotlightCard";
+import { useI18n } from "@/lib/i18n";
 import { MagneticButton } from "./MagneticButton";
+import { SpotlightCard } from "./SpotlightCard";
 
-const mqttSnippet = `# 订阅任意积木的上线通知
+const mqttSnippet = `# Subscribe to every block announcement
 mosquitto_sub -h host.local -t "blocks/+/announce"
 
-# 控制灯光块
+# Control the LED light block
 mosquitto_pub -h host.local \\
   -t "blocks/light-001/command" \\
   -m '{"action":"set_color","r":255,"g":94,"b":135}'`;
@@ -30,38 +31,25 @@ async def main():
 
 asyncio.run(main())`;
 
-const topics = [
-  { t: "blocks/+/announce", d: "模块上线时上报 id / type / capability" },
-  { t: "blocks/+/status", d: "online · offline（LWT 自动触发）" },
-  { t: "blocks/+/data", d: "传感器数据（温度、姿态、心率…）" },
-  { t: "blocks/{id}/config", d: "Host → 模块 的工作配置" },
-  { t: "blocks/{id}/command", d: "Agent/Host → 执行器 的控制指令" },
-];
-
-const services = [
-  { port: ":1883", name: "MQTT Broker", tag: "Mosquitto · QoS 1 · LWT" },
-  { port: ":5600", name: "UDP Server", tag: "视觉块 JPEG 帧" },
-  { port: ":8765", name: "WebSocket", tag: "语音块 双向音频" },
-  { port: ":3000", name: "Host API", tag: "Agent & 前端统一通道" },
-];
-
 export function DeveloperPanel() {
+  const { t } = useI18n();
+
   return (
     <div className="space-y-8">
       <div className="grid gap-6 lg:grid-cols-2">
-        <CodeCard title="MQTT · CLI" language="bash" code={mqttSnippet} />
-        <CodeCard title="Agent · Python" language="python" code={pySnippet} />
+        <CodeCard title={t.dev.mqttCardTitle} language="bash" code={mqttSnippet} />
+        <CodeCard title={t.dev.pyCardTitle} language="python" code={pySnippet} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
         <SpotlightCard className="lg:col-span-3">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
-            MQTT topic 规范
+            {t.dev.topicsTitle}
           </p>
           <div className="mt-5 space-y-2">
-            {topics.map((t, i) => (
+            {t.dev.topics.map((topic, i) => (
               <motion.div
-                key={t.t}
+                key={topic.t}
                 initial={{ opacity: 0, x: -8 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -69,9 +57,9 @@ export function DeveloperPanel() {
                 className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3"
               >
                 <span className="font-mono text-sm text-[color:var(--accent-2)]">
-                  {t.t}
+                  {topic.t}
                 </span>
-                <span className="text-xs text-white/50">{t.d}</span>
+                <span className="text-xs text-white/50">{topic.d}</span>
               </motion.div>
             ))}
           </div>
@@ -79,10 +67,10 @@ export function DeveloperPanel() {
 
         <SpotlightCard className="lg:col-span-2">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
-            Host 服务端口
+            {t.dev.portsTitle}
           </p>
           <div className="mt-5 space-y-3">
-            {services.map((s, i) => (
+            {t.dev.services.map((s, i) => (
               <motion.div
                 key={s.port}
                 initial={{ opacity: 0, y: 8 }}
@@ -109,16 +97,13 @@ export function DeveloperPanel() {
       <div className="flex flex-wrap items-center justify-between gap-6 rounded-2xl border border-white/10 bg-white/[0.02] p-8">
         <div>
           <h3 className="font-display text-2xl font-medium tracking-tight text-white">
-            接入自己的积木只需要一条 MQTT 消息
+            {t.dev.ctaTitle}
           </h3>
-          <p className="mt-2 max-w-xl text-sm text-white/50">
-            ESP32-C3 上连好 WiFi → publish `blocks/{"{id}"}/announce`，Host
-            自动识别能力并下发配置。你不用关心端口、配网，或协议转换。
-          </p>
+          <p className="mt-2 max-w-xl text-sm text-white/50">{t.dev.ctaDesc}</p>
         </div>
         <div className="flex gap-3">
-          <MagneticButton>阅读文档 →</MagneticButton>
-          <MagneticButton variant="ghost">GitHub</MagneticButton>
+          <MagneticButton>{t.dev.ctaPrimary}</MagneticButton>
+          <MagneticButton variant="ghost">{t.dev.ctaSecondary}</MagneticButton>
         </div>
       </div>
     </div>
