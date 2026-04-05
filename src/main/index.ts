@@ -58,6 +58,10 @@ function ensureAgentService(): AgentService {
   return agentService
 }
 
+function notifySessionsChanged(): void {
+  mainWindow?.webContents.send('agent:sessions-changed')
+}
+
 function registerIpcHandlers(): void {
   // --- Agent session handlers (existing) ---
 
@@ -70,6 +74,8 @@ function registerIpcHandlers(): void {
         message: err instanceof Error ? err.message : String(err),
       })
       mainWindow?.webContents.send('agent:complete')
+    } finally {
+      notifySessionsChanged()
     }
   })
 
@@ -80,6 +86,7 @@ function registerIpcHandlers(): void {
   ipcMain.handle('agent:new-session', async () => {
     await agentService?.newSession()
     mainWindow?.webContents.send('agent:session-reset')
+    notifySessionsChanged()
   })
 
   ipcMain.handle('agent:list-sessions', async () => {
@@ -95,7 +102,9 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('agent:resume-session', async (_event, sessionPath: string) => {
-    return await ensureAgentService().resumeSession(sessionPath)
+    const restored = await ensureAgentService().resumeSession(sessionPath)
+    notifySessionsChanged()
+    return restored
   })
 
   ipcMain.handle('agent:current-session', () => {
@@ -109,6 +118,7 @@ function registerIpcHandlers(): void {
     if (wasCurrent) {
       mainWindow?.webContents.send('agent:session-reset')
     }
+    notifySessionsChanged()
   })
 
   // --- Provider management handlers ---

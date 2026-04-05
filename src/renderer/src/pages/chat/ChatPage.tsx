@@ -35,7 +35,6 @@ export function ChatPage({ onOpenSettings }: { onOpenSettings: () => void }): Re
     <div className="relative flex h-full bg-[var(--term-bg)] text-[var(--term-text)]">
       <aside className="h-full w-[236px] shrink-0 overflow-hidden border-r border-[var(--term-border)] bg-[var(--term-panel)]">
         <SessionList
-          variant="panel"
           onNewSession={handleNewSession}
           onSettingsClick={onOpenSettings}
           onResume={handleResumeSession}

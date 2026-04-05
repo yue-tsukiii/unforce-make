@@ -49,6 +49,7 @@ interface AgentAPI {
   onComplete: (cb: () => void) => () => void
   onError: (cb: (data: { message: string }) => void) => () => void
   onSessionReset: (cb: () => void) => () => void
+  onSessionsChanged: (cb: () => void) => () => void
 
   // Provider management
   getProviders: () => Promise<unknown[]>

@@ -50,6 +50,7 @@ contextBridge.exposeInMainWorld('api', {
   onComplete: (cb: () => void) => onChannel('agent:complete', cb),
   onError: (cb: (data: { message: string }) => void) => onChannel('agent:error', cb),
   onSessionReset: (cb: () => void) => onChannel('agent:session-reset', cb),
+  onSessionsChanged: (cb: () => void) => onChannel('agent:sessions-changed', cb),
 
   // --- Provider management ---
   getProviders: (): Promise<unknown[]> => ipcRenderer.invoke('provider:get-all'),
