@@ -235,7 +235,7 @@ function registerIpcHandlers(): void {
       let url: string
       const headers: Record<string, string> = {}
 
-      if (provider.api === 'openai-completions') {
+      if (provider.api === 'openai-completions' || provider.api === 'openai-responses') {
         url = `${provider.baseUrl}/models`
         headers.Authorization = `Bearer ${provider.apiKey}`
       } else if (provider.api === 'anthropic-messages') {

@@ -21,7 +21,8 @@ const BUILT_IN_DEFS: BuiltInDef[] = [
   {
     id: 'openai',
     displayName: 'OpenAI',
-    api: 'openai-completions',
+    // Official OpenAI models (e.g. gpt-5.x with tools + reasoning) require /v1/responses, not chat completions.
+    api: 'openai-responses',
     provider: 'openai',
     baseUrl: 'https://api.openai.com/v1',
   },
