@@ -51,30 +51,17 @@ export function MagneticButton({
       className={cn(
         "group relative inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 font-display text-sm font-medium tracking-wide transition-colors duration-300",
         variant === "primary"
-          ? "text-black"
+          ? "text-white"
           : "text-black/90 hover:text-gray-900",
         className
       )}
       {...props}
     >
       {variant === "primary" ? (
-        <>
-          <motion.span
-            aria-hidden
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: `radial-gradient(120% 120% at ${glowX.get()} ${glowY.get()}, #ffffff 0%, #ffd4bd 40%, #ff6c37 90%)`,
-            }}
-          />
-          <motion.span
-            aria-hidden
-            className="absolute inset-0 rounded-full opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-80"
-            style={{
-              background:
-                "linear-gradient(135deg, #ff6c37 0%, #ff9a6c 50%, #ff6c37 100%)",
-            }}
-          />
-        </>
+        <span
+          aria-hidden
+          className="absolute inset-0 rounded-full bg-[#ff6c37]"
+        />
       ) : (
         <span
           aria-hidden

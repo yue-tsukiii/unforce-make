@@ -26,7 +26,7 @@ export function Nav() {
         transition={{ duration: 0.6 }}
       >
         <Link href="/" className="flex items-center gap-3">
-          <img src="/logo-linear.svg" alt="无为创造" className="h-9 w-auto" />
+          <img src="/logo-orange.svg" alt="无为创造" className="h-9 w-auto" />
           <span className="font-display text-lg font-medium tracking-tight">
             无为创造 <span className="text-black/50">Unforce Make</span>
           </span>

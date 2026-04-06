@@ -11,6 +11,7 @@ const FloatingBlocks = dynamic(
   { ssr: false },
 );
 import { SpotlightCard } from "./SpotlightCard";
+import { IsometricRoom } from "./IsometricRoom";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
@@ -206,46 +207,74 @@ export function Landing() {
           </h2>
         </motion.div>
 
-        {/* Center hero image */}
+        {/* Circular center + surrounding cut rectangles */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="mx-auto mb-10 max-w-2xl overflow-hidden rounded-3xl border border-black/10 bg-black/[0.02]"
+          className="relative mx-auto"
+          style={{ maxWidth: 720 }}
         >
-          <div className="relative aspect-[16/10] overflow-hidden">
-            <img
-              src="/scene-blocks.png"
-              alt={t.scenes.items[t.scenes.items.length - 1].alt}
-              className="h-full w-full object-cover"
-            />
+          {/* Grid: 3 cols x 2 rows, center circle overlaps */}
+          <div className="grid grid-cols-3 grid-rows-2 gap-3">
+            {t.scenes.items.slice(0, -1).map((s, i) => {
+              // Positions: 0=top-left, 1=top-center, 2=top-right, 3=bottom-left, 4=bottom-center(skip), 5=bottom-right
+              // We skip index positions where the center circle sits
+              const gridPos = i < 2 ? i : i + 1; // skip center cell (index 2 in bottom row mapped to 4)
+              const row = gridPos < 3 ? 0 : 1;
+              const col = gridPos % 3;
+              return (
+                <motion.div
+                  key={s.src}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08, duration: 0.6 }}
+                  className="group relative overflow-hidden rounded-2xl border border-black/8 bg-black/[0.02] transition-colors duration-300 hover:border-black/20"
+                  style={{ gridRow: row + 1, gridColumn: col + 1 }}
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <img
+                      src={s.src}
+                      alt={s.alt}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+                  <p className="px-3 py-2 text-xs leading-relaxed text-black/45">{s.alt}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Center circle — All-in-One blocks image */}
+          <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+            <div className="h-44 w-44 overflow-hidden rounded-full border-4 border-white bg-white shadow-xl sm:h-52 sm:w-52 lg:h-60 lg:w-60">
+              <img
+                src="/scene-blocks.png"
+                alt={t.scenes.items[t.scenes.items.length - 1].alt}
+                className="h-full w-full object-cover"
+              />
+            </div>
           </div>
         </motion.div>
+      </section>
 
-        {/* Surrounding scene cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {t.scenes.items.slice(0, -1).map((s, i) => (
-            <motion.div
-              key={s.src}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08, duration: 0.6 }}
-              className="group overflow-hidden rounded-2xl border border-black/8 bg-black/[0.02] transition-colors duration-300 hover:border-black/20"
-            >
-              <div className="relative aspect-[3/4] overflow-hidden">
-                <img
-                  src={s.src}
-                  alt={s.alt}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
-              </div>
-              <p className="px-3 py-2.5 text-xs leading-relaxed text-black/45">{s.alt}</p>
-            </motion.div>
-          ))}
-        </div>
+      {/* Isometric 3D Room */}
+      <section className="relative mx-auto max-w-7xl px-6 pb-28 lg:px-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-120px" }}
+          transition={{ duration: 0.7 }}
+          className="flex flex-col items-center gap-8"
+        >
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-black/40">
+            {locale === "zh" ? "智能空间" : "Smart Space"}
+          </span>
+          <IsometricRoom />
+        </motion.div>
       </section>
 
       {/* Team */}

@@ -28,13 +28,7 @@ export function LanguageToggle() {
               <motion.span
                 layoutId="lang-pill"
                 transition={{ type: "spring", stiffness: 360, damping: 32 }}
-                className="absolute inset-0 -z-10 rounded-full"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #ffffff 0%, #ffd4bd 60%, #ff6c37 100%)",
-                  boxShadow:
-                    "0 8px 30px -12px rgba(255, 108, 55, 0.5), 0 0 0 1px rgba(255,255,255,0.3)",
-                }}
+                className="absolute inset-0 -z-10 rounded-full bg-[#ff6c37]"
               />
             )}
             {l === "en" ? "EN" : "中文"}
