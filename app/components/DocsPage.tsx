@@ -24,14 +24,6 @@ export function DocsPage() {
       <div className="space-y-16">
         {/* System Architecture */}
         <Section id="arch" title={t.docs.sections.arch}>
-          <div className="mb-6 grid gap-4 lg:grid-cols-2">
-            <div className="overflow-hidden rounded-xl border border-white/10">
-              <img src="/arch-overview.png" alt="Architecture overview" className="w-full" />
-            </div>
-            <div className="overflow-hidden rounded-xl border border-white/10">
-              <img src="/system-topo.png" alt="System topology" className="w-full" />
-            </div>
-          </div>
           <pre className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-6 font-mono text-xs leading-relaxed text-white/70">
 {`┌──────────────────────────────────────────────────┐
 │  AI Agent ${zh ? "层" : "Layer"}  (LLM ${zh ? "决策" : "reasoning"} + ${zh ? "前端" : "frontend"} UI)          │
@@ -106,13 +98,6 @@ ${zh ? "前端" : "Frontend"} / Agent ──WS:3000──→ Host ──→ ${zh
           </div>
         </Section>
 
-        {/* Full Protocol Reference Image */}
-        <Section id="protocol-ref" title={zh ? "完整通信协议参考" : "Full Protocol Reference"}>
-          <div className="overflow-hidden rounded-xl border border-white/10 bg-white">
-            <img src="/protocol-ref.png" alt="Protocol reference" className="w-full" />
-          </div>
-        </Section>
-
         {/* Message Formats */}
         <Section id="messages" title={t.docs.sections.messages}>
           <CodeBlock title="announce" code={`{ "id": "env-001", "type": "sensor", "capability": "temperature" }`} />
@@ -150,9 +135,6 @@ ${zh ? "前端" : "Frontend"} / Agent ──WS:3000──→ Host ──→ ${zh
 
         {/* Module Onboarding */}
         <Section id="onboarding" title={t.docs.sections.onboarding}>
-          <div className="mb-6 overflow-hidden rounded-xl border border-white/10 bg-white">
-            <img src="/onboarding-seq.png" alt="Onboarding sequence" className="w-full" />
-          </div>
           <pre className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-6 font-mono text-xs leading-relaxed text-white/70">
 {`${zh ? "新模块" : "New Block"}                MQTT Broker              PC Host
   │                        │                      │
