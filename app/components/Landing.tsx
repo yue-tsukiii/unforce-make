@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
+import { FloatingBlocks } from "./FloatingBlocks";
 import { MagneticButton } from "./MagneticButton";
 import { SpotlightCard } from "./SpotlightCard";
 
@@ -16,6 +17,9 @@ export function Landing() {
 
   return (
     <>
+      {/* Floating 3D blocks */}
+      <FloatingBlocks />
+
       {/* Hero */}
       <section className="relative mx-auto max-w-7xl px-6 pt-24 pb-20 lg:px-10 lg:pt-32">
         <motion.div
@@ -125,6 +129,38 @@ export function Landing() {
               </SpotlightCard>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* Architecture diagrams */}
+      <section className="relative mx-auto max-w-7xl px-6 pb-28 lg:px-10">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="overflow-hidden rounded-2xl border border-white/10"
+          >
+            <img
+              src="/arch-overview.png"
+              alt="Architecture overview"
+              className="w-full"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="overflow-hidden rounded-2xl border border-white/10"
+          >
+            <img
+              src="/system-topo.png"
+              alt="System topology"
+              className="w-full"
+            />
+          </motion.div>
         </div>
       </section>
 
