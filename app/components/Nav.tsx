@@ -19,7 +19,7 @@ export function Nav() {
   ];
 
   return (
-    <header className="relative mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 pt-8 lg:px-10">
+    <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 pt-8 lg:px-10">
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}

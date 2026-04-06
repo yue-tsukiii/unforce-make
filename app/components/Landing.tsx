@@ -26,7 +26,7 @@ export function Landing() {
       <FloatingBlocks />
 
       {/* Hero */}
-      <section className="relative mx-auto max-w-7xl px-6 pt-24 pb-20 lg:px-10 lg:pt-32">
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-24 pb-20 lg:px-10 lg:pt-32">
         <motion.div
           key={`hero-${locale}`}
           initial="hidden"
