@@ -36,10 +36,10 @@ export const dict = {
       ],
     },
     tabsSection: {
-      eyebrow: "Two ways in",
-      titleA: "One room. One platform.",
-      titleB: "Two surfaces.",
-      desc: "End-users come in through the Agent. Developers come in through the protocol. Same brain, different entry points.",
+      eyebrow: "Ways in",
+      titleA: "Talk to it.",
+      titleB: "Or hack on it.",
+      desc: "Chat with the Agent and feel the space think — or grab our open-source stack and build your own.",
     },
     tabs: {
       agent: "Talk to the Agent",
@@ -160,10 +160,10 @@ export const dict = {
       ],
     },
     tabsSection: {
-      eyebrow: "两种入口",
-      titleA: "同一个房间，同一套平台，",
-      titleB: "两种面孔。",
-      desc: "终端用户从 Agent 进来，开发者从协议进来。同一个大脑，不同的入口。",
+      eyebrow: "打开方式",
+      titleA: "开口就能聊，",
+      titleB: "开源随便造。",
+      desc: "直接跟 Agent 说话，感受整个智能空间；或者拿我们开源的协议栈和硬件，自己拼一套出来。",
     },
     tabs: {
       agent: "和 Agent 对话",
