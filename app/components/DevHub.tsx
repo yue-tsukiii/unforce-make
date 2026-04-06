@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import { MagneticButton } from "./MagneticButton";
 import { SpotlightCard } from "./SpotlightCard";
@@ -23,7 +24,6 @@ async def main():
 
     def on_msg(_, __, msg):
         payload = json.loads(msg.payload)
-        # feed into your LLM / rules engine
         print(msg.topic, payload)
 
     c.on_message = on_msg
@@ -31,17 +31,34 @@ async def main():
 
 asyncio.run(main())`;
 
-export function DeveloperPanel() {
+export function DevHub() {
   const { t } = useI18n();
 
   return (
-    <div className="space-y-8">
+    <div className="relative mx-auto max-w-7xl px-6 pt-16 pb-28 lg:px-10">
+      {/* Hero */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+        className="mb-16"
+      >
+        <h1 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-medium tracking-[-0.04em] text-white">
+          {t.dev.heroTitle}
+        </h1>
+        <p className="mt-4 max-w-2xl text-lg text-white/50">
+          {t.dev.heroDesc}
+        </p>
+      </motion.div>
+
+      {/* Code snippets */}
       <div className="grid gap-6 lg:grid-cols-2">
         <CodeCard title={t.dev.mqttCardTitle} language="bash" code={mqttSnippet} />
         <CodeCard title={t.dev.pyCardTitle} language="python" code={pySnippet} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      {/* Services + Topics */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-5">
         <SpotlightCard className="lg:col-span-3">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
             {t.dev.topicsTitle}
@@ -94,17 +111,38 @@ export function DeveloperPanel() {
         </SpotlightCard>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-6 rounded-2xl border border-white/10 bg-white/[0.02] p-8">
-        <div>
-          <h3 className="font-display text-2xl font-medium tracking-tight text-white">
-            {t.dev.ctaTitle}
-          </h3>
-          <p className="mt-2 max-w-xl text-sm text-white/50">{t.dev.ctaDesc}</p>
-        </div>
-        <div className="flex gap-3">
-          <MagneticButton>{t.dev.ctaPrimary}</MagneticButton>
-          <MagneticButton variant="ghost">{t.dev.ctaSecondary}</MagneticButton>
-        </div>
+      {/* Downloads */}
+      <div className="mt-8">
+        <SpotlightCard>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
+            {t.dev.downloads}
+          </p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            {t.dev.downloadItems.map((item) => (
+              <div
+                key={item.name}
+                className="rounded-xl border border-white/5 bg-white/[0.02] px-5 py-4"
+              >
+                <div className="flex items-center gap-3">
+                  <DownloadIcon />
+                  <div>
+                    <div className="text-sm font-medium text-white">
+                      {item.name}
+                    </div>
+                    <div className="text-xs text-white/40">{item.desc}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SpotlightCard>
+      </div>
+
+      {/* Link to docs */}
+      <div className="mt-8 flex justify-center">
+        <Link href="/dev/docs">
+          <MagneticButton>{t.dev.docsLink}</MagneticButton>
+        </Link>
       </div>
     </div>
   );
@@ -136,5 +174,25 @@ function CodeCard({
         <code>{code}</code>
       </pre>
     </SpotlightCard>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      className="text-white/40"
+    >
+      <path
+        d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

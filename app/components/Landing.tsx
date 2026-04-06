@@ -1,13 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
-import { AgentPanel } from "./AgentPanel";
-import { CursorSpotlight } from "./CursorSpotlight";
-import { DeveloperPanel } from "./DeveloperPanel";
-import { LanguageToggle } from "./LanguageToggle";
 import { MagneticButton } from "./MagneticButton";
-import { Tabs, type TabItem } from "./Tabs";
+import { SpotlightCard } from "./SpotlightCard";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
@@ -17,75 +14,8 @@ const fadeUp = {
 export function Landing() {
   const { t, locale } = useI18n();
 
-  const tabs: TabItem[] = [
-    {
-      id: "agent",
-      label: t.tabs.agent,
-      icon: <SparkleIcon />,
-      content: <AgentPanel />,
-    },
-    {
-      id: "dev",
-      label: t.tabs.dev,
-      icon: <CodeIcon />,
-      content: <DeveloperPanel />,
-    },
-  ];
-
   return (
-    <main
-      key={locale}
-      className="relative z-[3] min-h-screen"
-    >
-      <CursorSpotlight />
-      <div className="grid-bg pointer-events-none absolute inset-x-0 top-0 h-[900px]" />
-
-      {/* Nav */}
-      <header className="relative mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 pt-8 lg:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center gap-3"
-        >
-          <img src="/logo-linear.svg" alt="无为创造" className="h-9 w-auto" />
-          <span className="font-display text-lg font-medium tracking-tight">
-            无为创造 <span className="text-white/50">Unforce Make</span>
-          </span>
-        </motion.div>
-
-        <motion.nav
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="hidden items-center gap-8 font-mono text-xs uppercase tracking-[0.18em] text-white/50 md:flex"
-        >
-          <a href="#product" className="hover:text-white">
-            {t.nav.product}
-          </a>
-          <a href="#architecture" className="hover:text-white">
-            {t.nav.architecture}
-          </a>
-          <a href="#team" className="hover:text-white">
-            {t.nav.team}
-          </a>
-        </motion.nav>
-
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="flex items-center gap-3"
-        >
-          <LanguageToggle />
-          <div className="hidden sm:block">
-            <MagneticButton className="!px-5 !py-2.5 text-xs">
-              {t.nav.cta}
-            </MagneticButton>
-          </div>
-        </motion.div>
-      </header>
-
+    <>
       {/* Hero */}
       <section className="relative mx-auto max-w-7xl px-6 pt-24 pb-20 lg:px-10 lg:pt-32">
         <motion.div
@@ -119,19 +49,25 @@ export function Landing() {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="mt-8 max-w-2xl text-lg leading-relaxed text-white/60"
           >
-            {t.hero.desc1}{" "}
-            <span className="text-white">{t.hero.desc2}</span>.
+            {t.hero.desc}
           </motion.p>
 
+          {/* CTA — up top */}
           <motion.div
             variants={fadeUp}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="mt-10 flex flex-wrap items-center gap-4"
           >
-            <MagneticButton>
-              {t.hero.primary} <ArrowIcon />
-            </MagneticButton>
-            <MagneticButton variant="ghost">{t.hero.secondary}</MagneticButton>
+            <Link href={t.hero.primaryHref}>
+              <MagneticButton>
+                {t.hero.primary} <ArrowIcon />
+              </MagneticButton>
+            </Link>
+            <Link href={t.hero.secondaryHref}>
+              <MagneticButton variant="ghost">
+                {t.hero.secondary}
+              </MagneticButton>
+            </Link>
           </motion.div>
 
           <motion.div
@@ -153,137 +89,156 @@ export function Landing() {
         </motion.div>
       </section>
 
-      {/* Tabs section */}
-      <section
-        id="product"
-        className="relative mx-auto max-w-7xl px-6 pb-28 lg:px-10"
-      >
+      {/* Value Props */}
+      <section className="relative mx-auto max-w-7xl px-6 pb-28 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-120px" }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-14 flex flex-col items-center text-center"
+          transition={{ duration: 0.7 }}
+          className="mb-14 text-center"
         >
           <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
-            {t.tabsSection.eyebrow}
+            {t.values.eyebrow}
           </span>
-          <h2 className="font-display mt-4 max-w-3xl text-[clamp(2rem,4.5vw,3.5rem)] font-medium leading-[1.05] tracking-[-0.03em]">
-            {t.tabsSection.titleA}{" "}
-            <span className="text-gradient">{t.tabsSection.titleB}</span>
-          </h2>
-          <p className="mt-5 max-w-2xl text-white/50">{t.tabsSection.desc}</p>
         </motion.div>
 
-        <Tabs items={tabs} />
-      </section>
-
-      {/* Architecture */}
-      <section
-        id="architecture"
-        className="relative mx-auto max-w-7xl px-6 pb-28 lg:px-10"
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-120px" }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="grid gap-6 lg:grid-cols-3"
-        >
-          {t.arch.cards.map((c, i) => (
+        <div className="grid gap-6 lg:grid-cols-3">
+          {t.values.cards.map((c, i) => (
             <motion.div
-              key={c.k}
+              key={c.t}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.7 }}
-              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-8 transition-colors duration-500 hover:border-white/25"
             >
-              <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--accent-1)]">
-                {c.k}
-              </div>
-              <h3 className="font-display mt-4 text-2xl font-medium tracking-tight text-white">
-                {c.t}
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-white/55">
-                {c.d}
-              </p>
-              <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-[color:var(--accent-1)]/20 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
+              <SpotlightCard className="h-full">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06]">
+                  <ValueIcon type={c.icon} />
+                </div>
+                <h3 className="font-display text-xl font-medium text-white">
+                  {c.t}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-white/55">
+                  {c.d}
+                </p>
+              </SpotlightCard>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </section>
 
-      {/* Footer */}
-      <footer
-        id="team"
-        className="relative mx-auto mt-10 max-w-7xl border-t border-white/10 px-6 py-14 lg:px-10"
-      >
-        <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
-          <div className="flex items-center gap-3">
-            <img src="/logo-linear.svg" alt="无为创造" className="h-9 w-auto" />
-            <div>
-              <div className="font-display text-lg font-medium">无为创造 Unforce Make</div>
-              <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
-                {t.footer.subtitle}
+      {/* Module Showcase */}
+      <section className="relative mx-auto max-w-7xl px-6 pb-28 lg:px-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-120px" }}
+          transition={{ duration: 0.7 }}
+          className="mb-14 text-center"
+        >
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
+            {t.modules.eyebrow}
+          </span>
+          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium leading-[1.05] tracking-[-0.03em] text-white">
+            {t.modules.title}
+          </h2>
+        </motion.div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {t.modules.items.map((m, i) => (
+            <motion.div
+              key={m.id}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.05, duration: 0.5 }}
+              className="group rounded-xl border border-white/10 bg-white/[0.02] p-5 transition-colors hover:border-white/25"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-display text-base font-medium text-white">
+                  {m.name}
+                </span>
+                <span
+                  className={`rounded-full px-2 py-0.5 font-mono text-[10px] uppercase ${
+                    m.cat === "stream"
+                      ? "bg-[color:var(--accent-1)]/20 text-[color:var(--accent-1)]"
+                      : m.cat === "sensor"
+                        ? "bg-[color:var(--accent-2)]/20 text-[color:var(--accent-2)]"
+                        : "bg-[color:var(--accent-3)]/20 text-[color:var(--accent-3)]"
+                  }`}
+                >
+                  {t.modules.categories[m.cat as keyof typeof t.modules.categories]}
+                </span>
               </div>
-            </div>
-          </div>
-          <p className="max-w-md text-sm text-white/40">{t.footer.blurb}</p>
-          <div className="flex gap-4 font-mono text-xs uppercase tracking-[0.2em] text-white/50">
-            <a href="#" className="hover:text-white">
-              {t.footer.github}
-            </a>
-            <a href="#" className="hover:text-white">
-              {t.footer.docs}
-            </a>
-            <a href="#" className="hover:text-white">
-              {t.footer.contact}
-            </a>
-          </div>
+              <p className="mt-2 text-xs text-white/50">{m.desc}</p>
+              <p className="mt-2 font-mono text-[10px] text-white/30">
+                {m.proto}
+              </p>
+            </motion.div>
+          ))}
         </div>
-      </footer>
-    </main>
+      </section>
+
+      {/* Team */}
+      <section
+        id="team"
+        className="relative mx-auto max-w-7xl px-6 pb-20 lg:px-10"
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="text-center"
+        >
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
+            {t.team.eyebrow}
+          </span>
+          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium tracking-[-0.03em] text-white">
+            {t.team.title}
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-white/50">{t.team.desc}</p>
+        </motion.div>
+      </section>
+    </>
   );
 }
 
-function LogoMark() {
+function ValueIcon({ type }: { type: string }) {
+  if (type === "magnet")
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M4 8a8 8 0 1 1 16 0v4H16V8a4 4 0 0 0-8 0v4H4V8Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          className="text-[color:var(--accent-1)]"
+        />
+        <rect x="4" y="12" width="4" height="4" rx="1" fill="currentColor" className="text-[color:var(--accent-1)]" />
+        <rect x="16" y="12" width="4" height="4" rx="1" fill="currentColor" className="text-[color:var(--accent-1)]" />
+      </svg>
+    );
+  if (type === "layers")
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+          className="text-[color:var(--accent-2)]"
+        />
+      </svg>
+    );
   return (
-    <div className="relative grid h-9 w-9 place-items-center">
-      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-[color:var(--accent-1)] via-[color:var(--accent-3)] to-[color:var(--accent-2)] opacity-90" />
-      <div className="absolute inset-[2px] rounded-[7px] bg-[color:var(--background)]" />
-      <div className="relative grid grid-cols-2 gap-0.5">
-        <span className="h-1.5 w-1.5 rounded-[2px] bg-[color:var(--accent-1)]" />
-        <span className="h-1.5 w-1.5 rounded-[2px] bg-[color:var(--accent-2)]" />
-        <span className="h-1.5 w-1.5 rounded-[2px] bg-[color:var(--accent-3)]" />
-        <span className="h-1.5 w-1.5 rounded-[2px] bg-white/80" />
-      </div>
-    </div>
-  );
-}
-
-function SparkleIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path
-        d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.8 2.8M14.9 14.9l2.8 2.8M6.3 17.7l2.8-2.8M14.9 9.1l2.8-2.8"
+        d="M12 3c.5 4-3 7.5-7 8 4 .5 7.5 4 8 7 .5-3 4-6.5 8-7-4-.5-8.5-4-9-8Z"
         stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function CodeIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M8 6l-5 6 5 6M16 6l5 6-5 6M14 4l-4 16"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
+        strokeWidth="1.6"
         strokeLinejoin="round"
+        className="text-[color:var(--accent-3)]"
       />
     </svg>
   );
