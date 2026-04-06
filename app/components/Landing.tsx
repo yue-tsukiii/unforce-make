@@ -189,6 +189,47 @@ export function Landing() {
         </div>
       </section>
 
+      {/* Scenes */}
+      <section className="relative mx-auto max-w-7xl px-6 pb-28 lg:px-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-120px" }}
+          transition={{ duration: 0.7 }}
+          className="mb-14 text-center"
+        >
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
+            {t.scenes.eyebrow}
+          </span>
+          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium leading-[1.05] tracking-[-0.03em] text-white">
+            {t.scenes.title}
+          </h2>
+        </motion.div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {t.scenes.items.map((s, i) => (
+            <motion.div
+              key={s.src}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08, duration: 0.6 }}
+              className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]"
+            >
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+              <p className="px-4 py-3 text-sm text-white/50">{s.alt}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* Team */}
       <section
         id="team"

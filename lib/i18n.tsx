@@ -75,6 +75,18 @@ export const dict = {
         { id: "vibe", name: "Haptics", cat: "actuator", proto: "MQTT", desc: "Vibration motor" },
       ],
     },
+    scenes: {
+      eyebrow: "Life with blocks",
+      title: "Scenes that just work",
+      items: [
+        { src: "/scene-cooking.png", alt: "Voice assistant guides you through a recipe while cooking" },
+        { src: "/scene-sleeping.png", alt: "Heart-rate block monitors your sleep in real time" },
+        { src: "/scene-baby.png", alt: "Camera block watches the baby and alerts you instantly" },
+        { src: "/scene-bathing.png", alt: "Relax in the bath while blocks monitor the environment" },
+        { src: "/scene-mood.png", alt: "Voice block detects mood and adjusts lighting automatically" },
+        { src: "/scene-blocks.png", alt: "All IoT blocks — camera, mic, sensors, and more" },
+      ],
+    },
     team: {
       eyebrow: "The team",
       title: "Built in 48 hours",
@@ -231,6 +243,18 @@ export const dict = {
         { id: "imu", name: "姿态块", cat: "sensor", proto: "MQTT", desc: "IMU 加速度 & 陀螺仪" },
         { id: "light", name: "灯光块", cat: "actuator", proto: "MQTT", desc: "WS2812 色彩控制" },
         { id: "vibe", name: "振动块", cat: "actuator", proto: "MQTT", desc: "振动马达" },
+      ],
+    },
+    scenes: {
+      eyebrow: "积木生活",
+      title: "开箱即用的场景",
+      items: [
+        { src: "/scene-cooking.png", alt: "语音块在你做饭时引导你完成菜谱" },
+        { src: "/scene-sleeping.png", alt: "心率块实时监测你的睡眠" },
+        { src: "/scene-baby.png", alt: "摄像头块看护宝宝，即时提醒你" },
+        { src: "/scene-bathing.png", alt: "泡澡放松，积木为你监控环境" },
+        { src: "/scene-mood.png", alt: "语音块感知情绪，自动调整灯光" },
+        { src: "/scene-blocks.png", alt: "全系列 IoT 积木 — 摄像头、麦克风、传感器等" },
       ],
     },
     team: {
