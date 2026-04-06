@@ -157,16 +157,6 @@ export const dict = {
     docs: {
       title: "Protocol & Architecture",
       desc: "Complete technical reference for the Unforce Make platform.",
-      sections: {
-        arch: "System Architecture",
-        modules: "Module Types",
-        mqtt: "MQTT Topic Spec",
-        messages: "Message Formats",
-        services: "Host Services",
-        onboarding: "Module Onboarding",
-        api: "Open API (planned)",
-        dataflow: "Data Flow",
-      },
     },
     footer: {
       subtitle: "Hackathon · 2026",
@@ -326,16 +316,6 @@ export const dict = {
     docs: {
       title: "协议与架构",
       desc: "无为创造平台完整技术参考。",
-      sections: {
-        arch: "系统架构",
-        modules: "模块类型",
-        mqtt: "MQTT Topic 规范",
-        messages: "消息格式",
-        services: "Host 服务",
-        onboarding: "模块上线流程",
-        api: "Open API（规划中）",
-        dataflow: "数据流",
-      },
     },
     footer: {
       subtitle: "黑客松 · 2026",
