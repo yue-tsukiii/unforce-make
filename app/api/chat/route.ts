@@ -1,3 +1,4 @@
+import { openai } from "@ai-sdk/openai";
 import {
   convertToModelMessages,
   stepCountIs,
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
     await req.json();
 
   const result = streamText({
-    model: "anthropic/claude-sonnet-4.6",
+    model: openai("gpt-4o"),
     system:
       SYSTEM_PROMPT_EN +
       (locale === "zh"
