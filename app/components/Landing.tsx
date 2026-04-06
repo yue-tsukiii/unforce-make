@@ -48,7 +48,7 @@ export function Landing() {
           transition={{ duration: 0.6 }}
           className="flex items-center gap-3"
         >
-          <img src="/logo-white.svg" alt="无为创造" className="h-9 w-auto" />
+          <img src="/logo-linear.svg" alt="无为创造" className="h-9 w-auto" />
           <span className="font-display text-lg font-medium tracking-tight">
             无为创造 <span className="text-white/50">Unforce Make</span>
           </span>
@@ -221,7 +221,7 @@ export function Landing() {
       >
         <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
           <div className="flex items-center gap-3">
-            <img src="/logo-white.svg" alt="无为创造" className="h-9 w-auto" />
+            <img src="/logo-linear.svg" alt="无为创造" className="h-9 w-auto" />
             <div>
               <div className="font-display text-lg font-medium">无为创造 Unforce Make</div>
               <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
