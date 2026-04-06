@@ -42,7 +42,7 @@ export function CursorSpotlight() {
       className="pointer-events-none fixed inset-0 z-[2] transition-opacity duration-500"
       style={{
         background:
-          "radial-gradient(600px circle at var(--mx, 50%) var(--my, 30%), rgba(124, 92, 255, 0.12), transparent 60%)",
+          "radial-gradient(600px circle at var(--mx, 50%) var(--my, 30%), rgba(255, 108, 55, 0.07), transparent 60%)",
       }}
     />
   );

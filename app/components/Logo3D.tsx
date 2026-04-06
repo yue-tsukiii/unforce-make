@@ -78,9 +78,9 @@ function StlModel({ onSpawnDebris }: { onSpawnDebris: () => void }) {
     return new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor1: { value: new THREE.Color("#c084fc") },
-        uColor2: { value: new THREE.Color("#f472b6") },
-        uColor3: { value: new THREE.Color("#22d3ee") },
+        uColor1: { value: new THREE.Color("#ff6c37") },
+        uColor2: { value: new THREE.Color("#ffd4bd") },
+        uColor3: { value: new THREE.Color("#ffffff") },
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -153,7 +153,7 @@ function Scene() {
   const [particles, setParticles] = useState<Particle[]>([]);
 
   const spawnDebris = useCallback(() => {
-    const colors = ["#c084fc", "#f472b6", "#22d3ee", "#fbbf24", "#34d399", "#f87171"];
+    const colors = ["#ff6c37", "#ffd4bd", "#ffffff", "#ff9a6c", "#d4d4d8"];
     const newParticles: Particle[] = Array.from({ length: 20 }, () => ({
       position: new THREE.Vector3(
         (Math.random() - 0.5) * 0.8,
@@ -182,8 +182,8 @@ function Scene() {
   return (
     <>
       <ambientLight intensity={0.4} />
-      <directionalLight position={[3, 3, 5]} intensity={0.8} color="#c084fc" />
-      <directionalLight position={[-3, 2, 3]} intensity={0.5} color="#22d3ee" />
+      <directionalLight position={[3, 3, 5]} intensity={0.8} color="#ff6c37" />
+      <directionalLight position={[-3, 2, 3]} intensity={0.5} color="#ffd4bd" />
       <StlModel onSpawnDebris={spawnDebris} />
       {particles.length > 0 && <DebrisParticles particles={particles} />}
     </>

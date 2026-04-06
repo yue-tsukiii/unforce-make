@@ -13,14 +13,14 @@ type Cube = {
 };
 
 const cubes: Cube[] = [
-  { x: "12%", y: "18%", size: 48, color: "#a78bfa", delay: 0, duration: 6, rotateStart: 15 },
-  { x: "78%", y: "12%", size: 36, color: "#06b6d4", delay: 0.8, duration: 7, rotateStart: -20 },
-  { x: "25%", y: "65%", size: 56, color: "#f472b6", delay: 1.2, duration: 8, rotateStart: 30 },
-  { x: "70%", y: "55%", size: 40, color: "#34d399", delay: 0.4, duration: 5.5, rotateStart: -10 },
-  { x: "50%", y: "8%", size: 32, color: "#fbbf24", delay: 1.6, duration: 9, rotateStart: 45 },
-  { x: "8%", y: "42%", size: 44, color: "#f87171", delay: 0.6, duration: 6.5, rotateStart: -35 },
-  { x: "88%", y: "38%", size: 28, color: "#60a5fa", delay: 1, duration: 7.5, rotateStart: 25 },
-  { x: "40%", y: "78%", size: 52, color: "#c084fc", delay: 1.4, duration: 8.5, rotateStart: -15 },
+  { x: "12%", y: "18%", size: 48, color: "#ff6c37", delay: 0, duration: 6, rotateStart: 15 },
+  { x: "78%", y: "12%", size: 36, color: "#ffffff", delay: 0.8, duration: 7, rotateStart: -20 },
+  { x: "25%", y: "65%", size: 56, color: "#ff9a6c", delay: 1.2, duration: 8, rotateStart: 30 },
+  { x: "70%", y: "55%", size: 40, color: "#ffffff", delay: 0.4, duration: 5.5, rotateStart: -10 },
+  { x: "50%", y: "8%", size: 32, color: "#ff6c37", delay: 1.6, duration: 9, rotateStart: 45 },
+  { x: "8%", y: "42%", size: 44, color: "#d4d4d8", delay: 0.6, duration: 6.5, rotateStart: -35 },
+  { x: "88%", y: "38%", size: 28, color: "#ff6c37", delay: 1, duration: 7.5, rotateStart: 25 },
+  { x: "40%", y: "78%", size: 52, color: "#d4d4d8", delay: 1.4, duration: 8.5, rotateStart: -15 },
 ];
 
 function CSSCube({ cube }: { cube: Cube }) {

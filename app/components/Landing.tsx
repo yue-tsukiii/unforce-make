@@ -171,10 +171,10 @@ export function Landing() {
                 <span
                   className={`rounded-full px-2 py-0.5 font-mono text-[10px] uppercase ${
                     m.cat === "stream"
-                      ? "bg-[color:var(--accent-1)]/20 text-[color:var(--accent-1)]"
+                      ? "bg-[#ff6c37]/15 text-[#ff6c37]"
                       : m.cat === "sensor"
-                        ? "bg-[color:var(--accent-2)]/20 text-[color:var(--accent-2)]"
-                        : "bg-[color:var(--accent-3)]/20 text-[color:var(--accent-3)]"
+                        ? "bg-white/8 text-white/60"
+                        : "bg-white/8 text-white/40"
                   }`}
                 >
                   {t.modules.categories[m.cat as keyof typeof t.modules.categories]}
@@ -206,17 +206,35 @@ export function Landing() {
           </h2>
         </motion.div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {t.scenes.items.map((s, i) => (
+        {/* Center hero image */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="mx-auto mb-10 max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02]"
+        >
+          <div className="relative aspect-[16/10] overflow-hidden">
+            <img
+              src="/scene-blocks.png"
+              alt={t.scenes.items[t.scenes.items.length - 1].alt}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </motion.div>
+
+        {/* Surrounding scene cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {t.scenes.items.slice(0, -1).map((s, i) => (
             <motion.div
               key={s.src}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08, duration: 0.6 }}
-              className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]"
+              className="group overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02] transition-colors duration-300 hover:border-white/20"
             >
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div className="relative aspect-[3/4] overflow-hidden">
                 <img
                   src={s.src}
                   alt={s.alt}
@@ -224,7 +242,7 @@ export function Landing() {
                   loading="lazy"
                 />
               </div>
-              <p className="px-4 py-3 text-sm text-white/50">{s.alt}</p>
+              <p className="px-3 py-2.5 text-xs leading-relaxed text-white/45">{s.alt}</p>
             </motion.div>
           ))}
         </div>
