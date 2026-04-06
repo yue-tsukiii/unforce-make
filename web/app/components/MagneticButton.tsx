@@ -52,7 +52,7 @@ export function MagneticButton({
         "group relative inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 font-display text-sm font-medium tracking-wide transition-colors duration-300",
         variant === "primary"
           ? "text-black"
-          : "text-white/90 hover:text-white",
+          : "text-black/90 hover:text-gray-900",
         className
       )}
       {...props}
@@ -78,7 +78,7 @@ export function MagneticButton({
       ) : (
         <span
           aria-hidden
-          className="absolute inset-0 rounded-full border border-white/15 bg-white/[0.03] backdrop-blur-md transition-all duration-300 group-hover:border-white/30 group-hover:bg-white/[0.06]"
+          className="absolute inset-0 rounded-full border border-black/15 bg-black/[0.03] backdrop-blur-md transition-all duration-300 group-hover:border-black/30 group-hover:bg-black/[0.06]"
         />
       )}
       <span className="relative z-10 flex items-center gap-2">{children}</span>

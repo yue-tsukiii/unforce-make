@@ -15,16 +15,16 @@ export function DocsPage() {
         transition={{ duration: 0.7 }}
         className="mb-16"
       >
-        <h1 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-medium tracking-[-0.04em] text-white">
+        <h1 className="font-display text-[clamp(2.5rem,5vw,4rem)] font-medium tracking-[-0.04em] text-gray-900">
           {t.docs.title}
         </h1>
-        <p className="mt-4 text-lg text-white/50">{t.docs.desc}</p>
+        <p className="mt-4 text-lg text-black/50">{t.docs.desc}</p>
       </motion.div>
 
       <div className="space-y-16">
         {/* System Architecture */}
         <Section id="arch" title={t.docs.sections.arch}>
-          <pre className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-6 font-mono text-xs leading-relaxed text-white/70">
+          <pre className="overflow-x-auto rounded-xl border border-black/10 bg-black/[0.02] p-6 font-mono text-xs leading-relaxed text-black/70">
 {`┌──────────────────────────────────────────────────┐
 │  AI Agent ${zh ? "层" : "Layer"}  (LLM ${zh ? "决策" : "reasoning"} + ${zh ? "前端" : "frontend"} UI)          │
 ├──────────────────────────────────────────────────┤
@@ -33,7 +33,7 @@ export function DocsPage() {
 │  ${zh ? "硬件模块层" : "Hardware Layer"}  (ESP32-S3 / ESP32-C3 ${zh ? "积木" : "blocks"})        │
 └──────────────────────────────────────────────────┘`}
           </pre>
-          <pre className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-6 font-mono text-xs leading-relaxed text-white/70">
+          <pre className="mt-4 overflow-x-auto rounded-xl border border-black/10 bg-black/[0.02] p-6 font-mono text-xs leading-relaxed text-black/70">
 {`${zh ? "传感器" : "Sensors"} ──MQTT──→ Broker ──→ ${zh ? "事件总线" : "Event Bus"} ──→ AI ${zh ? "管道" : "Pipeline"} / ${zh ? "前端推送" : "Frontend"}
 ${zh ? "视觉块" : "Vision"}  ──UDP───→ UDP Server ──→ ${zh ? "事件总线" : "Event Bus"} ──→ ${zh ? "视觉推理" : "Vision AI"}
 ${zh ? "语音块" : "Voice"}   ──WS────→ WS Server  ──→ ${zh ? "事件总线" : "Event Bus"} ──→ ASR
@@ -90,9 +90,9 @@ ${zh ? "前端" : "Frontend"} / Agent ──WS:3000──→ Host ──→ ${zh
               { topic: "blocks/{module_id}/config", desc: zh ? "Host → 模块的配置下发" : "Host → block work config" },
               { topic: "blocks/{module_id}/command", desc: zh ? "Agent/Host → 执行器控制指令" : "Agent/Host → actuator commands" },
             ].map((t) => (
-              <div key={t.topic} className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3">
+              <div key={t.topic} className="flex items-center justify-between rounded-xl border border-black/5 bg-black/[0.02] px-4 py-3">
                 <code className="font-mono text-sm text-[color:var(--accent-2)]">{t.topic}</code>
-                <span className="text-xs text-white/50">{t.desc}</span>
+                <span className="text-xs text-black/50">{t.desc}</span>
               </div>
             ))}
           </div>
@@ -119,7 +119,7 @@ ${zh ? "前端" : "Frontend"} / Agent ──WS:3000──→ Host ──→ ${zh
               [zh ? "前端 WebSocket" : "Frontend WebSocket", ":3000", zh ? "向前端 UI / Agent 推送数据，接收控制指令" : "Push data to frontend / Agent, receive control commands"],
             ]}
           />
-          <h4 className="mb-3 mt-8 font-mono text-xs uppercase tracking-widest text-white/40">
+          <h4 className="mb-3 mt-8 font-mono text-xs uppercase tracking-widest text-black/40">
             {zh ? "内部组件" : "Internal components"}
           </h4>
           <Table
@@ -135,7 +135,7 @@ ${zh ? "前端" : "Frontend"} / Agent ──WS:3000──→ Host ──→ ${zh
 
         {/* Module Onboarding */}
         <Section id="onboarding" title={t.docs.sections.onboarding}>
-          <pre className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-6 font-mono text-xs leading-relaxed text-white/70">
+          <pre className="overflow-x-auto rounded-xl border border-black/10 bg-black/[0.02] p-6 font-mono text-xs leading-relaxed text-black/70">
 {`${zh ? "新模块" : "New Block"}                MQTT Broker              PC Host
   │                        │                      │
   │── 1. CONNECT ─────────→│                      │
@@ -155,18 +155,18 @@ ${zh ? "模块断线" : "Block disconnects"} → Broker ${zh ? "自动发布" : 
 
         {/* Data Flow - web ↔ system */}
         <Section id="dataflow" title={t.docs.sections.dataflow}>
-          <h4 className="mb-3 font-mono text-xs uppercase tracking-widest text-white/40">
+          <h4 className="mb-3 font-mono text-xs uppercase tracking-widest text-black/40">
             {zh ? "当前（Hackathon Demo）" : "Current (Hackathon Demo)"}
           </h4>
-          <pre className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-6 font-mono text-xs leading-relaxed text-white/70">
+          <pre className="overflow-x-auto rounded-xl border border-black/10 bg-black/[0.02] p-6 font-mono text-xs leading-relaxed text-black/70">
 {`${zh ? "浏览器" : "Browser"} → /api/chat (Vercel Function) → OpenAI API
 ${zh ? "传感器数据" : "Sensor data"} = ${zh ? "前端 mock 静态值" : "Frontend mock static values"}`}
           </pre>
 
-          <h4 className="mb-3 mt-8 font-mono text-xs uppercase tracking-widest text-white/40">
+          <h4 className="mb-3 mt-8 font-mono text-xs uppercase tracking-widest text-black/40">
             {zh ? "后续接真实 Host" : "Future: real Host integration"}
           </h4>
-          <pre className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02] p-6 font-mono text-xs leading-relaxed text-white/70">
+          <pre className="overflow-x-auto rounded-xl border border-black/10 bg-black/[0.02] p-6 font-mono text-xs leading-relaxed text-black/70">
 {`PC Host (WS:3000) ← Cloud Tunnel (WSS) → Vercel Function
                                             ↕
                                        ${zh ? "浏览器" : "Browser"} (SSE/WS)
@@ -176,7 +176,7 @@ ${zh ? "传感器数据" : "Sensor data"} = ${zh ? "前端 mock 静态值" : "Fr
 /api/chat        → LLM + tool call → ${zh ? "通过 Host 下发 MQTT command" : "Issue MQTT command via Host"}`}
           </pre>
 
-          <h4 className="mb-3 mt-8 font-mono text-xs uppercase tracking-widest text-white/40">
+          <h4 className="mb-3 mt-8 font-mono text-xs uppercase tracking-widest text-black/40">
             {zh ? "数据存储（规划）" : "Data storage (planned)"}
           </h4>
           <Table
@@ -201,16 +201,16 @@ ${zh ? "传感器数据" : "Sensor data"} = ${zh ? "前端 mock 静态值" : "Fr
               { method: "GET", path: "/v1/blocks/{id}/stream", desc: zh ? "SSE 订阅实时 context" : "SSE subscribe to real-time context" },
               { method: "POST", path: "/v1/webhooks", desc: zh ? "注册 webhook" : "Register webhook" },
             ].map((api) => (
-              <div key={api.path} className="flex items-center gap-4 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3">
+              <div key={api.path} className="flex items-center gap-4 rounded-xl border border-black/5 bg-black/[0.02] px-4 py-3">
                 <span className={`font-mono text-xs font-bold ${api.method === "GET" ? "text-[color:var(--accent-2)]" : "text-[color:var(--accent-3)]"}`}>
                   {api.method}
                 </span>
-                <code className="font-mono text-sm text-white/70">{api.path}</code>
-                <span className="ml-auto text-xs text-white/40">{api.desc}</span>
+                <code className="font-mono text-sm text-black/70">{api.path}</code>
+                <span className="ml-auto text-xs text-black/40">{api.desc}</span>
               </div>
             ))}
           </div>
-          <p className="mt-4 text-xs text-white/30">
+          <p className="mt-4 text-xs text-black/30">
             {zh
               ? "MCP Server：平台为每个 OAuth token 自动生成 MCP endpoint，工具和 REST 一一对应。"
               : "MCP Server: The platform auto-generates an MCP endpoint per OAuth token. Tools map 1:1 to REST endpoints."}
@@ -238,7 +238,7 @@ function Section({
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.6 }}
     >
-      <h2 className="font-display mb-6 text-2xl font-medium tracking-tight text-white">
+      <h2 className="font-display mb-6 text-2xl font-medium tracking-tight text-gray-900">
         {title}
       </h2>
       {children}
@@ -248,14 +248,14 @@ function Section({
 
 function Table({ headers, rows }: { headers: string[]; rows: string[][] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/10">
+    <div className="overflow-x-auto rounded-xl border border-black/10">
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="border-b border-white/10 bg-white/[0.03]">
+          <tr className="border-b border-black/10 bg-black/[0.03]">
             {headers.map((h) => (
               <th
                 key={h}
-                className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-white/40"
+                className="px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-black/40"
               >
                 {h}
               </th>
@@ -264,11 +264,11 @@ function Table({ headers, rows }: { headers: string[]; rows: string[][] }) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-b border-white/5 last:border-0">
+            <tr key={i} className="border-b border-black/5 last:border-0">
               {row.map((cell, j) => (
                 <td
                   key={j}
-                  className={`px-4 py-3 ${j === 0 ? "font-medium text-white" : "text-white/60"}`}
+                  className={`px-4 py-3 ${j === 0 ? "font-medium text-gray-900" : "text-black/60"}`}
                 >
                   {cell}
                 </td>
@@ -283,9 +283,9 @@ function Table({ headers, rows }: { headers: string[]; rows: string[][] }) {
 
 function CodeBlock({ title, code }: { title: string; code: string }) {
   return (
-    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
-      <div className="border-b border-white/10 px-4 py-2">
-        <span className="font-mono text-[11px] text-white/40">{title}</span>
+    <div className="mt-4 rounded-xl border border-black/10 bg-black/[0.02] overflow-hidden">
+      <div className="border-b border-black/10 px-4 py-2">
+        <span className="font-mono text-[11px] text-black/40">{title}</span>
       </div>
       <pre className="px-4 py-3 font-mono text-xs text-[color:var(--accent-2)]">
         {code}

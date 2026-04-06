@@ -73,12 +73,12 @@ export function AgentPanel() {
     <div className="grid gap-8 lg:grid-cols-5">
       {/* Chat panel */}
       <SpotlightCard className="lg:col-span-3 p-0">
-        <div className="flex items-center gap-3 border-b border-white/10 px-6 py-4">
+        <div className="flex items-center gap-3 border-b border-black/10 px-6 py-4">
           <span className="pulse-dot block h-2 w-2 rounded-full bg-[color:var(--accent-2)]" />
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-white/50">
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-black/50">
             {t.agent.header}
           </p>
-          <span className="ml-auto font-mono text-[10px] text-white/30">
+          <span className="ml-auto font-mono text-[10px] text-black/30">
             {t.agent.ready}
           </span>
         </div>
@@ -104,9 +104,9 @@ export function AgentPanel() {
           {isLoading && <Thinking label={t.agent.thinking} />}
 
           {error && (
-            <div className="rounded-xl border border-[color:var(--accent-3)]/40 bg-[color:var(--accent-3)]/10 px-4 py-3 text-sm text-white/80">
+            <div className="rounded-xl border border-[color:var(--accent-3)]/40 bg-[color:var(--accent-3)]/10 px-4 py-3 text-sm text-black/80">
               {t.agent.errorFallback}
-              <div className="mt-1 font-mono text-[10px] text-white/40">
+              <div className="mt-1 font-mono text-[10px] text-black/40">
                 {error.message}
               </div>
             </div>
@@ -115,15 +115,15 @@ export function AgentPanel() {
 
         <form
           onSubmit={submit}
-          className="flex items-center gap-3 border-t border-white/10 px-6 py-4"
+          className="flex items-center gap-3 border-t border-black/10 px-6 py-4"
         >
-          <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-white/80 focus-within:border-white/30">
+          <div className="flex flex-1 items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-4 py-2.5 text-sm text-black/80 focus-within:border-black/30">
             <MicIcon />
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={t.agent.placeholder}
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-white/30"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-black/30"
             />
           </div>
           {isLoading ? (
@@ -146,7 +146,7 @@ export function AgentPanel() {
       {/* Side panel */}
       <div className="space-y-4 lg:col-span-2">
         <SpotlightCard>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-black/40">
             {t.agent.signals}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
@@ -158,22 +158,22 @@ export function AgentPanel() {
         </SpotlightCard>
 
         <SpotlightCard>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-black/40">
             {t.agent.online}
           </p>
           <ul className="mt-4 space-y-2 text-sm">
             {onlineBlocks.map((b) => (
               <li
                 key={b.id}
-                className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2"
+                className="flex items-center justify-between rounded-lg border border-black/5 bg-black/[0.02] px-3 py-2"
               >
                 <span className="flex items-center gap-2">
                   <span className="pulse-dot block h-1.5 w-1.5 rounded-full bg-[color:var(--accent-2)]" />
-                  <span className="font-mono text-xs text-white/80">
+                  <span className="font-mono text-xs text-black/80">
                     {b.id}
                   </span>
                 </span>
-                <span className="text-xs text-white/40">
+                <span className="text-xs text-black/40">
                   {t.agent.blockLabels[b.capability]}
                 </span>
               </li>
@@ -196,8 +196,8 @@ function MessageBubble({ message }: { message: UIMessage }) {
       transition={{ duration: 0.35 }}
       className={
         isUser
-          ? "ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-white/10 px-5 py-3 text-right text-sm text-white/90 backdrop-blur-sm"
-          : "max-w-[90%] rounded-2xl rounded-bl-md border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] px-5 py-4 text-sm leading-relaxed text-white/90"
+          ? "ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-black/10 px-5 py-3 text-right text-sm text-black/90 backdrop-blur-sm"
+          : "max-w-[90%] rounded-2xl rounded-bl-md border border-black/10 bg-gradient-to-br from-black/[0.06] to-black/[0.02] px-5 py-4 text-sm leading-relaxed text-black/90"
       }
     >
       <div className="space-y-2">
@@ -227,7 +227,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
                   {tp.state ? ` · ${tp.state}` : ""}
                 </div>
                 {tp.output !== undefined && (
-                  <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px] text-white/60">
+                  <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px] text-black/60">
                     {JSON.stringify(tp.output, null, 2)}
                   </pre>
                 )}
@@ -252,7 +252,7 @@ function Empty({
 }) {
   return (
     <div className="flex flex-1 flex-col items-start justify-center gap-5 py-8">
-      <div className="font-display text-xl leading-snug text-white/80">
+      <div className="font-display text-xl leading-snug text-black/80">
         {locale === "zh"
           ? "你好呀 👋 让我帮你照看这个房间。"
           : "Hi there 👋 let me keep an eye on your room."}
@@ -263,7 +263,7 @@ function Empty({
             key={s}
             type="button"
             onClick={() => onPick(s)}
-            className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-white/70 transition-all duration-300 hover:border-white/30 hover:bg-white/[0.08] hover:text-white"
+            className="rounded-full border border-black/10 bg-black/[0.03] px-4 py-2 text-xs text-black/70 transition-all duration-300 hover:border-black/30 hover:bg-black/[0.08] hover:text-gray-900"
           >
             {s}
           </button>
@@ -275,12 +275,12 @@ function Empty({
 
 function Thinking({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 font-mono text-[11px] text-white/40">
+    <div className="flex items-center gap-2 font-mono text-[11px] text-black/40">
       <span className="inline-flex gap-1">
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="inline-block h-1 w-1 rounded-full bg-white/60"
+            className="inline-block h-1 w-1 rounded-full bg-black/60"
             animate={{ opacity: [0.2, 1, 0.2] }}
             transition={{
               duration: 1,
@@ -311,8 +311,8 @@ function Metric({
         ? "var(--accent-2)"
         : "var(--accent-3)";
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-3">
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">
+    <div className="rounded-xl border border-black/10 bg-black/[0.02] px-3 py-3">
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-black/40">
         {label}
       </div>
       <div

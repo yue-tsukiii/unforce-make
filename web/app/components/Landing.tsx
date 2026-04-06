@@ -37,7 +37,7 @@ export function Landing() {
           <motion.div
             variants={fadeUp}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-white/60 backdrop-blur-md"
+            className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-black/60 backdrop-blur-md"
           >
             <span className="pulse-dot block h-1.5 w-1.5 rounded-full bg-[color:var(--accent-2)]" />
             {t.hero.badge}
@@ -50,13 +50,13 @@ export function Landing() {
           >
             <span className="text-gradient">{t.hero.titleA}</span>
             <br />
-            <span className="text-white">{t.hero.titleB}</span>
+            <span className="text-gray-900">{t.hero.titleB}</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-8 max-w-2xl text-lg leading-relaxed text-white/60"
+            className="mt-8 max-w-2xl text-lg leading-relaxed text-black/60"
           >
             {t.hero.desc}
           </motion.p>
@@ -82,14 +82,14 @@ export function Landing() {
           <motion.div
             variants={fadeUp}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-16 grid grid-cols-2 gap-8 border-t border-white/10 pt-8 sm:grid-cols-4"
+            className="mt-16 grid grid-cols-2 gap-8 border-t border-black/10 pt-8 sm:grid-cols-4"
           >
             {t.hero.stats.map((s) => (
               <div key={s.v}>
-                <div className="font-display text-3xl font-medium text-white">
+                <div className="font-display text-3xl font-medium text-gray-900">
                   {s.k}
                 </div>
-                <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
+                <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-black/40">
                   {s.v}
                 </div>
               </div>
@@ -107,7 +107,7 @@ export function Landing() {
           transition={{ duration: 0.7 }}
           className="mb-14 text-center"
         >
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-black/40">
             {t.values.eyebrow}
           </span>
         </motion.div>
@@ -122,13 +122,13 @@ export function Landing() {
               transition={{ delay: i * 0.1, duration: 0.7 }}
             >
               <SpotlightCard className="h-full">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06]">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-black/[0.06]">
                   <ValueIcon type={c.icon} />
                 </div>
-                <h3 className="font-display text-xl font-medium text-white">
+                <h3 className="font-display text-xl font-medium text-gray-900">
                   {c.t}
                 </h3>
-                <p className="mt-3 text-sm leading-relaxed text-white/55">
+                <p className="mt-3 text-sm leading-relaxed text-black/55">
                   {c.d}
                 </p>
               </SpotlightCard>
@@ -146,10 +146,10 @@ export function Landing() {
           transition={{ duration: 0.7 }}
           className="mb-14 text-center"
         >
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-black/40">
             {t.modules.eyebrow}
           </span>
-          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium leading-[1.05] tracking-[-0.03em] text-white">
+          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium leading-[1.05] tracking-[-0.03em] text-gray-900">
             {t.modules.title}
           </h2>
         </motion.div>
@@ -162,10 +162,10 @@ export function Landing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.05, duration: 0.5 }}
-              className="group rounded-xl border border-white/10 bg-white/[0.02] p-5 transition-colors hover:border-white/25"
+              className="group rounded-xl border border-black/10 bg-black/[0.02] p-5 transition-colors hover:border-black/25"
             >
               <div className="flex items-center justify-between">
-                <span className="font-display text-base font-medium text-white">
+                <span className="font-display text-base font-medium text-gray-900">
                   {m.name}
                 </span>
                 <span
@@ -173,15 +173,15 @@ export function Landing() {
                     m.cat === "stream"
                       ? "bg-[#ff6c37]/15 text-[#ff6c37]"
                       : m.cat === "sensor"
-                        ? "bg-white/8 text-white/60"
-                        : "bg-white/8 text-white/40"
+                        ? "bg-black/8 text-black/60"
+                        : "bg-black/8 text-black/40"
                   }`}
                 >
                   {t.modules.categories[m.cat as keyof typeof t.modules.categories]}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-white/50">{m.desc}</p>
-              <p className="mt-2 font-mono text-[10px] text-white/30">
+              <p className="mt-2 text-xs text-black/50">{m.desc}</p>
+              <p className="mt-2 font-mono text-[10px] text-black/30">
                 {m.proto}
               </p>
             </motion.div>
@@ -198,10 +198,10 @@ export function Landing() {
           transition={{ duration: 0.7 }}
           className="mb-14 text-center"
         >
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-black/40">
             {t.scenes.eyebrow}
           </span>
-          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium leading-[1.05] tracking-[-0.03em] text-white">
+          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium leading-[1.05] tracking-[-0.03em] text-gray-900">
             {t.scenes.title}
           </h2>
         </motion.div>
@@ -212,7 +212,7 @@ export function Landing() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="mx-auto mb-10 max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02]"
+          className="mx-auto mb-10 max-w-2xl overflow-hidden rounded-3xl border border-black/10 bg-black/[0.02]"
         >
           <div className="relative aspect-[16/10] overflow-hidden">
             <img
@@ -232,7 +232,7 @@ export function Landing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08, duration: 0.6 }}
-              className="group overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02] transition-colors duration-300 hover:border-white/20"
+              className="group overflow-hidden rounded-2xl border border-black/8 bg-black/[0.02] transition-colors duration-300 hover:border-black/20"
             >
               <div className="relative aspect-[3/4] overflow-hidden">
                 <img
@@ -242,7 +242,7 @@ export function Landing() {
                   loading="lazy"
                 />
               </div>
-              <p className="px-3 py-2.5 text-xs leading-relaxed text-white/45">{s.alt}</p>
+              <p className="px-3 py-2.5 text-xs leading-relaxed text-black/45">{s.alt}</p>
             </motion.div>
           ))}
         </div>
@@ -260,13 +260,13 @@ export function Landing() {
           transition={{ duration: 0.7 }}
           className="text-center"
         >
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/40">
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-black/40">
             {t.team.eyebrow}
           </span>
-          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium tracking-[-0.03em] text-white">
+          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium tracking-[-0.03em] text-gray-900">
             {t.team.title}
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-white/50">{t.team.desc}</p>
+          <p className="mx-auto mt-4 max-w-xl text-black/50">{t.team.desc}</p>
         </motion.div>
       </section>
     </>

@@ -10,7 +10,7 @@ export function LanguageToggle() {
     <div
       role="group"
       aria-label={t.lang.label}
-      className="relative flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1 backdrop-blur-xl"
+      className="relative flex items-center rounded-full border border-black/10 bg-black/[0.03] p-1 backdrop-blur-xl"
     >
       {(["en", "zh"] as const).map((l) => {
         const isActive = l === locale;
@@ -21,7 +21,7 @@ export function LanguageToggle() {
             onClick={() => setLocale(l)}
             aria-pressed={isActive}
             className={`relative z-10 min-w-[52px] rounded-full px-3 py-1.5 font-display text-[11px] font-medium tracking-[0.18em] uppercase transition-colors duration-300 ${
-              isActive ? "text-black" : "text-white/60 hover:text-white"
+              isActive ? "text-black" : "text-black/60 hover:text-gray-900"
             }`}
           >
             {isActive && (

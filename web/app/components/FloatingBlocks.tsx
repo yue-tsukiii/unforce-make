@@ -14,9 +14,9 @@ type Cube = {
 
 const cubes: Cube[] = [
   { x: "12%", y: "18%", size: 48, color: "#ff6c37", delay: 0, duration: 6, rotateStart: 15 },
-  { x: "78%", y: "12%", size: 36, color: "#ffffff", delay: 0.8, duration: 7, rotateStart: -20 },
+  { x: "78%", y: "12%", size: 36, color: "#ffd4bd", delay: 0.8, duration: 7, rotateStart: -20 },
   { x: "25%", y: "65%", size: 56, color: "#ff9a6c", delay: 1.2, duration: 8, rotateStart: 30 },
-  { x: "70%", y: "55%", size: 40, color: "#ffffff", delay: 0.4, duration: 5.5, rotateStart: -10 },
+  { x: "70%", y: "55%", size: 40, color: "#ffd4bd", delay: 0.4, duration: 5.5, rotateStart: -10 },
   { x: "50%", y: "8%", size: 32, color: "#ff6c37", delay: 1.6, duration: 9, rotateStart: 45 },
   { x: "8%", y: "42%", size: 44, color: "#d4d4d8", delay: 0.6, duration: 6.5, rotateStart: -35 },
   { x: "88%", y: "38%", size: 28, color: "#ff6c37", delay: 1, duration: 7.5, rotateStart: 25 },
@@ -63,7 +63,7 @@ function CSSCube({ cube }: { cube: Cube }) {
         {faces.map((f, i) => (
           <div
             key={i}
-            className="absolute inset-0 rounded-sm border border-white/10"
+            className="absolute inset-0 rounded-sm border border-black/10"
             style={{
               transform: f.transform,
               backfaceVisibility: "visible",

@@ -28,7 +28,7 @@ export function Nav() {
         <Link href="/" className="flex items-center gap-3">
           <img src="/logo-linear.svg" alt="无为创造" className="h-9 w-auto" />
           <span className="font-display text-lg font-medium tracking-tight">
-            无为创造 <span className="text-white/50">Unforce Make</span>
+            无为创造 <span className="text-black/50">Unforce Make</span>
           </span>
         </Link>
       </motion.div>
@@ -37,7 +37,7 @@ export function Nav() {
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
-        className="hidden items-center gap-8 font-mono text-xs uppercase tracking-[0.18em] text-white/50 md:flex"
+        className="hidden items-center gap-8 font-mono text-xs uppercase tracking-[0.18em] text-black/50 md:flex"
       >
         {links.map((l) => (
           <Link
@@ -45,8 +45,8 @@ export function Nav() {
             href={l.href}
             className={
               pathname === l.href
-                ? "text-white"
-                : "hover:text-white transition-colors"
+                ? "text-gray-900"
+                : "hover:text-gray-900 transition-colors"
             }
           >
             {l.label}
