@@ -31,7 +31,7 @@ export function SpotlightCard({ children, className }: Props) {
       )}
       style={{
         backgroundImage:
-          "radial-gradient(350px circle at var(--px, -100px) var(--py, -100px), rgba(124, 92, 255, 0.18), transparent 45%)",
+          "radial-gradient(350px circle at var(--px, -100px) var(--py, -100px), rgba(255, 108, 55, 0.12), transparent 45%)",
       }}
     >
       <div className="pointer-events-none absolute inset-px rounded-[15px] bg-gradient-to-b from-white/5 to-transparent opacity-60" />

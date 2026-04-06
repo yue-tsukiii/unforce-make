@@ -63,7 +63,7 @@ export function MagneticButton({
             aria-hidden
             className="absolute inset-0 rounded-full"
             style={{
-              background: `radial-gradient(120% 120% at ${glowX.get()} ${glowY.get()}, #ffffff 0%, #cfc1ff 40%, #7c5cff 75%, #2ce4c4 100%)`,
+              background: `radial-gradient(120% 120% at ${glowX.get()} ${glowY.get()}, #ffffff 0%, #ffd4bd 40%, #ff6c37 90%)`,
             }}
           />
           <motion.span
@@ -71,7 +71,7 @@ export function MagneticButton({
             className="absolute inset-0 rounded-full opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-80"
             style={{
               background:
-                "linear-gradient(135deg, #7c5cff 0%, #2ce4c4 50%, #ff5e87 100%)",
+                "linear-gradient(135deg, #ff6c37 0%, #ff9a6c 50%, #ff6c37 100%)",
             }}
           />
         </>

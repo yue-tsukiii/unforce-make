@@ -6,3 +6,7 @@ dist/
 .DS_Store
 *.tsbuildinfo
 docs
+.next/
+
+.vercel/
+next-env.d.ts

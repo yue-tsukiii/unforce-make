@@ -14,40 +14,87 @@ export type Locale = "en" | "zh";
 export const dict = {
   en: {
     nav: {
-      product: "Product",
-      architecture: "Architecture",
-      team: "Team",
-      cta: "Join the Beta",
+      home: "Home",
+      agent: "Agent",
+      dev: "Developers",
+      docs: "Docs",
+      cta: "Try Agent",
     },
     hero: {
       badge: "Team Unforce Make · Hackathon 2026",
       titleA: "Snap the blocks.",
       titleB: "Talk to the room.",
-      desc1:
-        "Unforce Make is a modular IoT blocks platform. Magnetic POGO-pin hardware joins a single Wi-Fi mesh in seconds, a local Host routes MQTT, UDP and WebSocket traffic, and a Claude-powered Agent understands the whole room — so your space can finally",
-      desc2: "listen, see, and act",
-      primary: "Try the live agent",
-      secondary: "Read the docs",
+      desc: "Modular IoT blocks that magnetically snap together, auto-join Wi-Fi, and let an AI Agent understand your entire space.",
+      primary: "Talk to the room",
+      primaryHref: "/agent",
+      secondary: "Developer docs",
+      secondaryHref: "/dev",
       stats: [
-        { k: "< 3s", v: "block plug-and-play" },
-        { k: "7", v: "hardware modules" },
+        { k: "< 3s", v: "plug-and-play" },
+        { k: "8", v: "block types" },
         { k: "4", v: "protocol lanes" },
         { k: "100%", v: "runs on-device" },
       ],
     },
-    tabsSection: {
-      eyebrow: "Two ways in",
-      titleA: "One room. One platform.",
-      titleB: "Two surfaces.",
-      desc: "End-users come in through the Agent. Developers come in through the protocol. Same brain, different entry points.",
+    values: {
+      eyebrow: "Why Unforce Make",
+      cards: [
+        {
+          icon: "magnet",
+          t: "Zero-config hardware",
+          d: "POGO-pin magnetic connectors carry power and Wi-Fi credentials. A new block goes from box to mesh in under 3 seconds — no app, no pairing.",
+        },
+        {
+          icon: "layers",
+          t: "Unified Context",
+          d: "ESP32 sensors speak MQTT, cameras speak UDP, mics speak WebSocket — the Host normalises everything into one Context API that any app or agent can consume.",
+        },
+        {
+          icon: "brain",
+          t: "Agent-native",
+          d: "A built-in AI Agent fuses sensor data, vision and voice into a single understanding of the room. Just talk — it listens, sees, and acts.",
+        },
+      ],
     },
-    tabs: {
-      agent: "Talk to the Agent",
-      dev: "For Developers",
+    modules: {
+      eyebrow: "The blocks",
+      title: "8 modules, 3 categories",
+      categories: {
+        stream: "Stream (ESP32-S3)",
+        sensor: "Sensor (ESP32-C3)",
+        actuator: "Actuator (ESP32-C3)",
+      },
+      items: [
+        { id: "vision", name: "Vision", cat: "stream", proto: "UDP :5600", desc: "JPEG video frames" },
+        { id: "voice", name: "Voice", cat: "stream", proto: "WebSocket :8765", desc: "Duplex audio" },
+        { id: "env", name: "Environment", cat: "sensor", proto: "MQTT", desc: "Temperature & humidity" },
+        { id: "hr", name: "Heart Rate", cat: "sensor", proto: "MQTT", desc: "BPM & HRV" },
+        { id: "hcho", name: "Formaldehyde", cat: "sensor", proto: "MQTT", desc: "HCHO concentration" },
+        { id: "imu", name: "Posture", cat: "sensor", proto: "MQTT", desc: "IMU accelerometer & gyro" },
+        { id: "light", name: "LED Strip", cat: "actuator", proto: "MQTT", desc: "WS2812 color control" },
+        { id: "vibe", name: "Haptics", cat: "actuator", proto: "MQTT", desc: "Vibration motor" },
+      ],
+    },
+    scenes: {
+      eyebrow: "Life with blocks",
+      title: "Scenes that just work",
+      items: [
+        { src: "/scene-cooking.png", alt: "Voice assistant guides you through a recipe while cooking" },
+        { src: "/scene-sleeping.png", alt: "Heart-rate block monitors your sleep in real time" },
+        { src: "/scene-baby.png", alt: "Camera block watches the baby and alerts you instantly" },
+        { src: "/scene-bathing.png", alt: "Relax in the bath while blocks monitor the environment" },
+        { src: "/scene-mood.png", alt: "Voice block detects mood and adjusts lighting automatically" },
+        { src: "/scene-blocks.png", alt: "All IoT blocks — camera, mic, sensors, and more" },
+      ],
+    },
+    team: {
+      eyebrow: "The team",
+      title: "Built in 48 hours",
+      desc: "ESP32s, Mosquitto, Python asyncio, Next.js, and Claude — everything runs on your own hardware.",
     },
     agent: {
       header: "Unforce Agent · live",
-      ready: "Powered by Claude via Vercel AI Gateway",
+      ready: "Powered by OpenAI via Vercel",
       placeholder: "Ask the room anything…",
       send: "Send",
       stop: "Stop",
@@ -80,6 +127,8 @@ export const dict = {
         "The agent is offline in this preview. Showing a canned reply.",
     },
     dev: {
+      heroTitle: "Developer Hub",
+      heroDesc: "Everything you need to build on the Unforce Make platform.",
       mqttCardTitle: "MQTT · CLI",
       pyCardTitle: "Agent · Python",
       topicsTitle: "MQTT topic spec",
@@ -97,30 +146,27 @@ export const dict = {
         { port: ":8765", name: "WebSocket", tag: "Voice block duplex audio" },
         { port: ":3000", name: "Host API", tag: "Agent & frontend gateway" },
       ],
-      ctaTitle: "Ship your own block in one MQTT message",
-      ctaDesc:
-        "Wire Wi-Fi on an ESP32-C3, publish blocks/{id}/announce, and the Host auto-detects its capability and hands back a config. No ports, no pairing, no protocol translation.",
-      ctaPrimary: "Read the docs →",
-      ctaSecondary: "GitHub",
-    },
-    arch: {
-      cards: [
-        {
-          k: "01",
-          t: "Hardware Layer",
-          d: "ESP32-S3 for vision/voice streams. ESP32-C3 for low-power sensors and actuators. POGO-pin magnetic docks for instant mesh join.",
-        },
-        {
-          k: "02",
-          t: "Host Layer",
-          d: "Python asyncio runtime. MQTT broker, UDP server, WebSocket server. Event bus, node registry, port pool, AI pipeline.",
-        },
-        {
-          k: "03",
-          t: "Agent Layer",
-          d: "Claude 4.6 as the reasoning core. Multi-modal context over sensors, vision and voice. Executes via MQTT commands.",
-        },
+      downloads: "Hardware resources",
+      downloadItems: [
+        { name: "3D Models (.STEP)", desc: "Enclosure & dock CAD files" },
+        { name: "Firmware binaries", desc: "Pre-built ESP32-S3 / C3 images" },
+        { name: "Schematics", desc: "Circuit diagrams & BOM" },
       ],
+      docsLink: "Full protocol docs →",
+    },
+    docs: {
+      title: "Protocol & Architecture",
+      desc: "Complete technical reference for the Unforce Make platform.",
+      sections: {
+        arch: "System Architecture",
+        modules: "Module Types",
+        mqtt: "MQTT Topic Spec",
+        messages: "Message Formats",
+        services: "Host Services",
+        onboarding: "Module Onboarding",
+        api: "Open API (planned)",
+        dataflow: "Data Flow",
+      },
     },
     footer: {
       subtitle: "Hackathon · 2026",
@@ -138,40 +184,87 @@ export const dict = {
   },
   zh: {
     nav: {
-      product: "产品",
-      architecture: "架构",
-      team: "团队",
-      cta: "加入内测",
+      home: "首页",
+      agent: "Agent",
+      dev: "开发者",
+      docs: "文档",
+      cta: "试试 Agent",
     },
     hero: {
-      badge: "Unforce Make 战队 · 2026 黑客松",
+      badge: "无为创造 · 2026 黑客松",
       titleA: "拼上积木。",
       titleB: "和房间说话。",
-      desc1:
-        "Unforce Make 是一个模块化 IoT 积木平台。磁吸 POGO 硬件几秒钟内接入同一个 Wi-Fi，本地 Host 统一调度 MQTT、UDP 与 WebSocket，由 Claude 驱动的 Agent 理解整个空间 —— 让你的房间真正能",
-      desc2: "听、看、动",
-      primary: "试试实时 Agent",
-      secondary: "查看文档",
+      desc: "模块化 IoT 积木，磁吸即插、秒级入网，AI Agent 理解你的整个空间。",
+      primary: "和房间聊聊",
+      primaryHref: "/agent",
+      secondary: "开发者文档",
+      secondaryHref: "/dev",
       stats: [
-        { k: "< 3 秒", v: "积木即插即用" },
-        { k: "7", v: "种硬件积木" },
+        { k: "< 3 秒", v: "即插即用" },
+        { k: "8", v: "种积木" },
         { k: "4", v: "条协议通道" },
         { k: "100%", v: "本地运行" },
       ],
     },
-    tabsSection: {
-      eyebrow: "两种入口",
-      titleA: "同一个房间，同一套平台，",
-      titleB: "两种面孔。",
-      desc: "终端用户从 Agent 进来，开发者从协议进来。同一个大脑，不同的入口。",
+    values: {
+      eyebrow: "为什么选无为创造",
+      cards: [
+        {
+          icon: "magnet",
+          t: "零配置硬件",
+          d: "POGO 磁吸连接器同时传递供电和 Wi-Fi 凭证。新积木从拆箱到入网不到 3 秒 —— 不用 app，不用配对。",
+        },
+        {
+          icon: "layers",
+          t: "统一 Context",
+          d: "传感器走 MQTT，摄像头走 UDP，麦克风走 WebSocket —— Host 把一切归一成一套 Context API，任何应用或 Agent 都能直接用。",
+        },
+        {
+          icon: "brain",
+          t: "原生 Agent",
+          d: "内置 AI Agent 融合传感器、视觉、语音，形成对整个空间的理解。开口就行 —— 它能听、能看、能动。",
+        },
+      ],
     },
-    tabs: {
-      agent: "和 Agent 对话",
-      dev: "面向开发者",
+    modules: {
+      eyebrow: "积木家族",
+      title: "8 种模块，3 个分类",
+      categories: {
+        stream: "流式 (ESP32-S3)",
+        sensor: "传感器 (ESP32-C3)",
+        actuator: "执行器 (ESP32-C3)",
+      },
+      items: [
+        { id: "vision", name: "视觉块", cat: "stream", proto: "UDP :5600", desc: "JPEG 视频帧" },
+        { id: "voice", name: "语音块", cat: "stream", proto: "WebSocket :8765", desc: "双向音频" },
+        { id: "env", name: "环境块", cat: "sensor", proto: "MQTT", desc: "温度 & 湿度" },
+        { id: "hr", name: "心率块", cat: "sensor", proto: "MQTT", desc: "BPM & HRV" },
+        { id: "hcho", name: "甲醛块", cat: "sensor", proto: "MQTT", desc: "甲醛浓度" },
+        { id: "imu", name: "姿态块", cat: "sensor", proto: "MQTT", desc: "IMU 加速度 & 陀螺仪" },
+        { id: "light", name: "灯光块", cat: "actuator", proto: "MQTT", desc: "WS2812 色彩控制" },
+        { id: "vibe", name: "振动块", cat: "actuator", proto: "MQTT", desc: "振动马达" },
+      ],
+    },
+    scenes: {
+      eyebrow: "积木生活",
+      title: "开箱即用的场景",
+      items: [
+        { src: "/scene-cooking.png", alt: "语音块在你做饭时引导你完成菜谱" },
+        { src: "/scene-sleeping.png", alt: "心率块实时监测你的睡眠" },
+        { src: "/scene-baby.png", alt: "摄像头块看护宝宝，即时提醒你" },
+        { src: "/scene-bathing.png", alt: "泡澡放松，积木为你监控环境" },
+        { src: "/scene-mood.png", alt: "语音块感知情绪，自动调整灯光" },
+        { src: "/scene-blocks.png", alt: "全系列 IoT 积木 — 摄像头、麦克风、传感器等" },
+      ],
+    },
+    team: {
+      eyebrow: "团队",
+      title: "48 小时造出来",
+      desc: "ESP32、Mosquitto、Python asyncio、Next.js 加 Claude —— 一切都跑在你自己的设备上。",
     },
     agent: {
       header: "Unforce Agent · 在线",
-      ready: "由 Claude × Vercel AI Gateway 驱动",
+      ready: "由 OpenAI × Vercel 驱动",
       placeholder: "随便问问这个房间……",
       send: "发送",
       stop: "停止",
@@ -203,6 +296,8 @@ export const dict = {
       errorFallback: "Agent 暂时离线，先给你一条预置回复。",
     },
     dev: {
+      heroTitle: "开发者中心",
+      heroDesc: "在无为创造平台上构建所需的一切。",
       mqttCardTitle: "MQTT · 命令行",
       pyCardTitle: "Agent · Python",
       topicsTitle: "MQTT Topic 规范",
@@ -220,30 +315,27 @@ export const dict = {
         { port: ":8765", name: "WebSocket", tag: "语音块双向音频" },
         { port: ":3000", name: "Host API", tag: "Agent 与前端统一网关" },
       ],
-      ctaTitle: "接入自己的积木只需要一条 MQTT 消息",
-      ctaDesc:
-        "ESP32-C3 上连好 Wi-Fi，publish 一条 blocks/{id}/announce，Host 就会自动识别能力并下发配置。你不用关心端口、配网或协议转换。",
-      ctaPrimary: "阅读文档 →",
-      ctaSecondary: "GitHub",
-    },
-    arch: {
-      cards: [
-        {
-          k: "01",
-          t: "硬件层",
-          d: "ESP32-S3 承载视觉 / 语音流；ESP32-C3 承载低功耗传感器与执行器。POGO 磁吸即插即用，秒级入网。",
-        },
-        {
-          k: "02",
-          t: "Host 层",
-          d: "Python asyncio 运行时。MQTT broker、UDP server、WebSocket server，配合事件总线、节点注册表、端口池与 AI 管线。",
-        },
-        {
-          k: "03",
-          t: "Agent 层",
-          d: "Claude 4.6 做推理核心，融合传感器、视觉、语音多模态上下文，通过 MQTT 指令执行决策。",
-        },
+      downloads: "硬件资源",
+      downloadItems: [
+        { name: "3D 模型 (.STEP)", desc: "外壳 & 底座 CAD 文件" },
+        { name: "固件二进制", desc: "预编译 ESP32-S3 / C3 镜像" },
+        { name: "原理图", desc: "电路图 & BOM 清单" },
       ],
+      docsLink: "完整协议文档 →",
+    },
+    docs: {
+      title: "协议与架构",
+      desc: "无为创造平台完整技术参考。",
+      sections: {
+        arch: "系统架构",
+        modules: "模块类型",
+        mqtt: "MQTT Topic 规范",
+        messages: "消息格式",
+        services: "Host 服务",
+        onboarding: "模块上线流程",
+        api: "Open API（规划中）",
+        dataflow: "数据流",
+      },
     },
     footer: {
       subtitle: "黑客松 · 2026",

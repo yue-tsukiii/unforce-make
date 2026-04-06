@@ -21,13 +21,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Unforce Make — Modular AI Blocks, Reimagined",
+  title: "无为创造 Unforce Make — Modular AI Blocks, Reimagined",
   description:
-    "Unforce Make is a modular IoT blocks platform: magnetic-plug hardware, a Python Host that routes MQTT / UDP / WebSocket traffic, and an AI Agent that understands the whole room.",
+    "无为创造（Unforce Make）是一个模块化 IoT 积木平台：磁吸即插硬件、Python Host 统一调度 MQTT / UDP / WebSocket，以及理解整个空间的 AI Agent。",
   openGraph: {
-    title: "Unforce Make — Modular AI Blocks",
+    title: "无为创造 Unforce Make — Modular AI Blocks",
     description:
-      "Snap the blocks together. We handle Wi-Fi, protocols, and intent. You talk to the room.",
+      "拼上积木，和房间说话。Snap the blocks together, talk to the room.",
     type: "website",
   },
 };

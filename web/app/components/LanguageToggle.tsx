@@ -31,9 +31,9 @@ export function LanguageToggle() {
                 className="absolute inset-0 -z-10 rounded-full"
                 style={{
                   background:
-                    "linear-gradient(135deg, #ffffff 0%, #c6b9ff 60%, #7c5cff 100%)",
+                    "linear-gradient(135deg, #ffffff 0%, #ffd4bd 60%, #ff6c37 100%)",
                   boxShadow:
-                    "0 8px 30px -12px rgba(124, 92, 255, 0.6), 0 0 0 1px rgba(255,255,255,0.3)",
+                    "0 8px 30px -12px rgba(255, 108, 55, 0.5), 0 0 0 1px rgba(255,255,255,0.3)",
                 }}
               />
             )}
