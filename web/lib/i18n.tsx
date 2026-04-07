@@ -125,6 +125,16 @@ export const dict = {
       },
       errorFallback:
         "The agent is offline in this preview. Showing a canned reply.",
+      proactive: {
+        title: "Proactive Insights",
+        alerts: [
+          { icon: "heart", text: "Your resting heart rate has been elevated (92 bpm avg) for the past 30 min. Consider taking a break.", severity: "warn" },
+          { icon: "air", text: "HCHO level rising — 0.09→0.12 mg/m³ in the last hour. Opening a window is recommended.", severity: "warn" },
+          { icon: "posture", text: "You've been sitting for 55 minutes. Time to stretch!", severity: "info" },
+          { icon: "sleep", text: "Based on last night's data (5.2h deep sleep), you may feel fatigued after 3 PM. A 20-min nap could help.", severity: "info" },
+          { icon: "mood", text: "Voice tone analysis suggests low energy. Switching lights to warm mode to boost mood.", severity: "action" },
+        ],
+      },
     },
     dev: {
       heroTitle: "Developer Hub",
@@ -284,6 +294,16 @@ export const dict = {
         formaldehyde: "甲醛",
       },
       errorFallback: "Agent 暂时离线，先给你一条预置回复。",
+      proactive: {
+        title: "主动洞察",
+        alerts: [
+          { icon: "heart", text: "过去 30 分钟静息心率偏高（均值 92 bpm），建议休息一下。", severity: "warn" },
+          { icon: "air", text: "甲醛浓度上升中 — 过去一小时从 0.09 升至 0.12 mg/m³，建议开窗通风。", severity: "warn" },
+          { icon: "posture", text: "你已经坐了 55 分钟了，该起来活动一下！", severity: "info" },
+          { icon: "sleep", text: "根据昨晚数据（深度睡眠 5.2h），下午 3 点后可能会疲倦，建议小睡 20 分钟。", severity: "info" },
+          { icon: "mood", text: "语音情绪分析显示能量偏低，正在切换灯光至暖色模式提升状态。", severity: "action" },
+        ],
+      },
     },
     dev: {
       heroTitle: "开发者中心",
