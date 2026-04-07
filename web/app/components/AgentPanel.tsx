@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import Markdown from "react-markdown";
 import { getAgentServerUrl, getHardwareWebSocketUrl } from "@/lib/agent-server";
 import { useI18n } from "@/lib/i18n";
 import { MagneticButton } from "./MagneticButton";
@@ -454,6 +453,12 @@ export function AgentPanel() {
 
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
+
+  // Collect thinking parts into one collapsed block
+  const thinkingParts = (message.parts ?? []).filter((p) => p.type === "thinking");
+  const thinkingText = thinkingParts.map((p) => (p as { text: string }).text).join("");
+  const otherParts = (message.parts ?? []).filter((p) => p.type !== "thinking");
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -466,54 +471,137 @@ function MessageBubble({ message }: { message: Message }) {
       }
     >
       <div className="space-y-2">
+        {/* Collapsed thinking */}
+        {!isUser && thinkingText && <CollapsedThinking text={thinkingText} />}
+
         {message.content && (
           isUser
             ? <div className="whitespace-pre-wrap">{message.content}</div>
-            : <div className="agent-markdown"><Markdown>{message.content}</Markdown></div>
+            : <div className="agent-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }} />
         )}
-        {(message.parts ?? []).map((part, i) => {
+        {otherParts.map((part, i) => {
           if (part.type === "text") {
             return isUser ? (
               <div key={i} className="whitespace-pre-wrap">{part.text}</div>
             ) : (
-              <div key={i} className="agent-markdown"><Markdown>{part.text}</Markdown></div>
-            );
-          }
-          if (part.type === "thinking") {
-            return (
-              <div key={i} className="whitespace-pre-wrap italic text-black/40 text-xs">
-                {part.text}
-              </div>
+              <div key={i} className="agent-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(part.text) }} />
             );
           }
           if (part.type === "tool") {
             if (part.toolName === "memory_recall" && part.state === "done" && part.output) {
               return <MemoryRecallCard key={i} output={part.output} />;
             }
-            return (
-              <div
-                key={i}
-                className="rounded-lg border border-[color:var(--accent-1)]/40 bg-[color:var(--accent-1)]/10 px-3 py-2 font-mono text-[11px]"
-              >
-                <div className="text-[color:var(--accent-1)]">
-                  → {part.toolName}
-                  {part.state ? ` · ${part.state}` : ""}
-                </div>
-                {part.output !== undefined && (
-                  <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px] text-black/60">
-                    {typeof part.output === "string"
-                      ? part.output
-                      : JSON.stringify(part.output, null, 2)}
-                  </pre>
-                )}
-              </div>
-            );
+            return <CollapsedTool key={i} part={part} />;
           }
           return null;
         })}
       </div>
     </motion.div>
   );
+}
+
+function CollapsedThinking({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const preview = text.slice(0, 60).replace(/\n/g, " ").trim();
+  return (
+    <div
+      className="flex items-start gap-1.5 cursor-pointer select-none group"
+      onClick={() => setOpen(!open)}
+    >
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 10 10"
+        className={`mt-0.5 shrink-0 text-black/30 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+      >
+        <path d="M3 1.5L7 5L3 8.5" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {open ? (
+        <div className="whitespace-pre-wrap text-[11px] leading-relaxed text-black/35 italic">
+          {text}
+        </div>
+      ) : (
+        <span className="text-[11px] text-black/30 italic group-hover:text-black/45 transition-colors">
+          {preview}{text.length > 60 ? "…" : ""}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function CollapsedTool({ part }: { part: Extract<MessagePart, { type: "tool" }> }) {
+  const [open, setOpen] = useState(false);
+  const statusIcon = part.state === "done" ? "✓" : "⟳";
+  return (
+    <div
+      className="rounded-lg border border-[color:var(--accent-1)]/30 bg-[color:var(--accent-1)]/5 px-3 py-1.5 font-mono text-[11px] cursor-pointer select-none"
+      onClick={() => setOpen(!open)}
+    >
+      <div className="flex items-center gap-1.5 text-[color:var(--accent-1)]/70">
+        <svg
+          width="8"
+          height="8"
+          viewBox="0 0 10 10"
+          className={`shrink-0 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+        >
+          <path d="M3 1.5L7 5L3 8.5" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span>{statusIcon} {part.toolName}</span>
+        <span className="text-black/25">{part.state}</span>
+      </div>
+      {open && part.output !== undefined && (
+        <pre className="mt-1.5 overflow-x-auto whitespace-pre-wrap text-[10px] text-black/50 border-t border-[color:var(--accent-1)]/15 pt-1.5">
+          {typeof part.output === "string"
+            ? part.output
+            : JSON.stringify(part.output, null, 2)}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+/** Lightweight markdown → HTML (no deps needed) */
+function renderMarkdown(src: string): string {
+  let html = escapeHtml(src);
+
+  // Code blocks ```...```
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_m, _lang, code) =>
+    `<pre><code>${code.trim()}</code></pre>`
+  );
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  // Italic
+  html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, "<em>$1</em>");
+  // Headers
+  html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+  html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
+  html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+  // Blockquotes
+  html = html.replace(/^&gt; (.+)$/gm, "<blockquote>$1</blockquote>");
+  // Unordered lists
+  html = html.replace(/^[-*] (.+)$/gm, "<li>$1</li>");
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
+  // Ordered lists
+  html = html.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
+  // HR
+  html = html.replace(/^---$/gm, "<hr/>");
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // Paragraphs (double newline)
+  html = html.replace(/\n{2,}/g, "</p><p>");
+  // Single newlines → <br>
+  html = html.replace(/\n/g, "<br/>");
+
+  return `<p>${html}</p>`.replace(/<p><\/p>/g, "");
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function Empty({
