@@ -205,32 +205,33 @@ export function Landing() {
               );
             })}
 
-            {/* Floating module chips scattered around */}
-            {t.modules.items.map((m, i) => {
+            {/* Floating module images scattered around */}
+            {moduleImages.map((mod, i) => {
               const chipPositions = [
-                { top: '8%', left: '38%' },
-                { top: '5%', right: '28%' },
-                { top: '28%', left: '8%' },
-                { top: '30%', right: '6%' },
-                { bottom: '28%', left: '10%' },
-                { bottom: '25%', right: '8%' },
-                { bottom: '8%', left: '18%' },
-                { bottom: '5%', right: '22%' },
+                { top: '6%', left: '36%' },
+                { top: '4%', right: '26%' },
+                { top: '32%', left: '6%' },
+                { top: '34%', right: '4%' },
+                { bottom: '22%', left: '8%' },
+                { bottom: '6%', right: '28%' },
               ];
               const pos = chipPositions[i];
               return (
                 <motion.div
-                  key={m.id}
-                  initial={{ opacity: 0, scale: 0.7 }}
+                  key={mod.src}
+                  initial={{ opacity: 0, scale: 0.5 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.4 + i * 0.06, duration: 0.5 }}
+                  transition={{ delay: 0.3 + i * 0.08, duration: 0.5 }}
                   className="absolute z-30"
-                  style={pos}
+                  style={{ width: 64, ...pos }}
                 >
-                  <div className="rounded-lg border border-black/10 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm">
-                    <span className="font-mono text-[10px] font-medium text-gray-700">{m.name}</span>
-                  </div>
+                  <img
+                    src={mod.src}
+                    alt={mod.alt}
+                    className="w-full drop-shadow-md transition-transform duration-300 hover:scale-110"
+                    loading="lazy"
+                  />
                 </motion.div>
               );
             })}
@@ -249,12 +250,10 @@ export function Landing() {
             <IsometricRoom />
           </motion.div>
 
-          {/* Module chips row */}
-          <div className="mb-6 flex flex-wrap justify-center gap-2">
-            {t.modules.items.map((m) => (
-              <div key={m.id} className="rounded-lg border border-black/10 bg-black/[0.02] px-3 py-1.5">
-                <span className="font-mono text-[10px] font-medium text-gray-700">{m.name}</span>
-              </div>
+          {/* Module images row */}
+          <div className="mb-6 flex flex-wrap justify-center gap-3">
+            {moduleImages.map((mod) => (
+              <img key={mod.src} src={mod.src} alt={mod.alt} className="w-12 drop-shadow-md" loading="lazy" />
             ))}
           </div>
 
@@ -308,6 +307,15 @@ export function Landing() {
 }
 
 const teamPhotos = ["/team/1.jpg", "/team/2.jpg", "/team/3.jpg"];
+
+const moduleImages = [
+  { src: "/modules/麦克.png", alt: "Voice / 麦克" },
+  { src: "/modules/相机.png", alt: "Camera / 相机" },
+  { src: "/modules/温度.png", alt: "Temperature / 温度" },
+  { src: "/modules/湿度.png", alt: "Humidity / 湿度" },
+  { src: "/modules/震动.png", alt: "Haptics / 震动" },
+  { src: "/modules/追迹.png", alt: "Posture / 追迹" },
+];
 
 function TeamMarquee() {
   // Double the images for seamless infinite scroll
