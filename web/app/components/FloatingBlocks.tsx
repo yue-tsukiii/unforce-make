@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useCallback, useState } from "react";
 
 type Cube = {
   x: string;
@@ -23,7 +24,46 @@ const cubes: Cube[] = [
   { x: "40%", y: "78%", size: 52, color: "#d4d4d8", delay: 1.4, duration: 8.5, rotateStart: -15 },
 ];
 
-function CSSCube({ cube }: { cube: Cube }) {
+type Debris = {
+  id: number;
+  x: number;
+  y: number;
+  color: string;
+  size: number;
+  dx: number;
+  dy: number;
+  rotate: number;
+};
+
+let debrisId = 0;
+
+function spawnDebris(x: number, y: number, color: string): Debris[] {
+  const count = 12 + Math.floor(Math.random() * 8);
+  const pieces: Debris[] = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+    const speed = 40 + Math.random() * 80;
+    pieces.push({
+      id: debrisId++,
+      x,
+      y,
+      color,
+      size: 3 + Math.random() * 5,
+      dx: Math.cos(angle) * speed,
+      dy: Math.sin(angle) * speed * 0.6 - 20, // bias slightly upward initially
+      rotate: Math.random() * 720 - 360,
+    });
+  }
+  return pieces;
+}
+
+function CSSCube({
+  cube,
+  onDebris,
+}: {
+  cube: Cube;
+  onDebris: (x: number, y: number, color: string) => void;
+}) {
   const half = cube.size / 2;
 
   const faces = [
@@ -35,13 +75,23 @@ function CSSCube({ cube }: { cube: Cube }) {
     { transform: `rotateX(-90deg) translateZ(${half}px)` },
   ];
 
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      const rect = (e.currentTarget as HTMLElement).closest('[data-blocks-root]')?.getBoundingClientRect();
+      if (!rect) return;
+      onDebris(e.clientX - rect.left, e.clientY - rect.top, cube.color);
+    },
+    [cube.color, onDebris],
+  );
+
   return (
     <motion.div
-      className="absolute"
+      className="absolute cursor-pointer"
       style={{ left: cube.x, top: cube.y, perspective: 600 }}
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: cube.delay, duration: 0.8, ease: "easeOut" }}
+      onClick={handleClick}
     >
       <motion.div
         style={{
@@ -77,12 +127,63 @@ function CSSCube({ cube }: { cube: Cube }) {
   );
 }
 
-export function FloatingBlocks() {
+function DebrisPiece({ d }: { d: Debris }) {
   return (
-    <div className="pointer-events-none absolute inset-0 h-[900px] overflow-hidden" aria-hidden>
+    <motion.div
+      className="absolute rounded-[1px]"
+      style={{
+        left: d.x,
+        top: d.y,
+        width: d.size,
+        height: d.size,
+        backgroundColor: d.color,
+        opacity: 0.8,
+      }}
+      initial={{ x: 0, y: 0, rotate: 0, scale: 1, opacity: 0.9 }}
+      animate={{
+        x: d.dx,
+        y: d.dy + 200, // gravity pull down
+        rotate: d.rotate,
+        scale: 0,
+        opacity: 0,
+      }}
+      transition={{
+        duration: 0.8 + Math.random() * 0.4,
+        ease: [0.25, 0, 0.6, 1],
+      }}
+    />
+  );
+}
+
+export function FloatingBlocks() {
+  const [debris, setDebris] = useState<Debris[]>([]);
+
+  const handleDebris = useCallback((x: number, y: number, color: string) => {
+    const pieces = spawnDebris(x, y, color);
+    setDebris((prev) => [...prev, ...pieces]);
+    // Clean up after animation
+    setTimeout(() => {
+      setDebris((prev) => prev.filter((p) => !pieces.includes(p)));
+    }, 1500);
+  }, []);
+
+  return (
+    <div
+      data-blocks-root
+      className="absolute inset-0 h-[900px] overflow-hidden"
+      style={{ pointerEvents: "none" }}
+      aria-hidden
+    >
       {cubes.map((c, i) => (
-        <CSSCube key={i} cube={c} />
+        <div key={i} style={{ pointerEvents: "auto" }}>
+          <CSSCube cube={c} onDebris={handleDebris} />
+        </div>
       ))}
+      <AnimatePresence>
+        {debris.map((d) => (
+          <DebrisPiece key={d.id} d={d} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
