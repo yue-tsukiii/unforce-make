@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import dynamic from "next/dynamic";
@@ -316,7 +317,7 @@ export function Landing() {
   );
 }
 
-const teamPhotos = ["/team/1.jpg", "/team/2.jpg", "/team/3.jpg"];
+const teamPhotos = ["/team/1.jpg", "/team/2.jpg", "/team/3.jpg", "/team/4.jpg", "/team/5.jpg", "/team/6.jpg"];
 
 const moduleImages = [
   { src: "/modules/麦克.png", alt: "Voice / 麦克" },
@@ -340,11 +341,14 @@ function TeamMarquee() {
             className="flex-none overflow-hidden rounded-2xl border border-black/8 shadow-sm"
             style={{ width: 420 }}
           >
-            <img
+            <Image
               src={src}
               alt=""
+              width={420}
+              height={288}
               className="h-72 w-full object-cover"
               loading="lazy"
+              sizes="420px"
             />
           </div>
         ))}
@@ -352,7 +356,7 @@ function TeamMarquee() {
 
       <style jsx>{`
         .team-marquee {
-          animation: marquee-scroll 20s linear infinite;
+          animation: marquee-scroll 35s linear infinite;
           width: max-content;
         }
         .team-marquee:hover {
