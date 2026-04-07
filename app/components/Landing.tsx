@@ -206,45 +206,102 @@ export function Landing() {
           </h2>
         </motion.div>
 
-        {/* Center hero image */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="mx-auto mb-10 max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02]"
-        >
-          <div className="relative aspect-[16/10] overflow-hidden">
-            <img
-              src="/scene-blocks.png"
-              alt={t.scenes.items[t.scenes.items.length - 1].alt}
-              className="h-full w-full object-cover"
-            />
-          </div>
-        </motion.div>
-
-        {/* Surrounding scene cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {t.scenes.items.slice(0, -1).map((s, i) => (
+        {/* Orbital layout: center body + 5 surrounding scenes */}
+        <div className="relative mx-auto" style={{ maxWidth: 900 }}>
+          {/* Desktop orbital layout */}
+          <div className="hidden lg:block" style={{ height: 720 }}>
+            {/* Center body image */}
             <motion.div
-              key={s.src}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.08, duration: 0.6 }}
-              className="group overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02] transition-colors duration-300 hover:border-white/20"
+              transition={{ duration: 0.8 }}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+              style={{ width: 260 }}
             >
-              <div className="relative aspect-[3/4] overflow-hidden">
+              <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02]">
                 <img
-                  src={s.src}
-                  alt={s.alt}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
+                  src="/scene-blocks.png"
+                  alt={t.scenes.items[t.scenes.items.length - 1].alt}
+                  className="w-full object-cover"
                 />
               </div>
-              <p className="px-3 py-2.5 text-xs leading-relaxed text-white/45">{s.alt}</p>
             </motion.div>
-          ))}
+
+            {/* 5 orbiting scene cards */}
+            {t.scenes.items.slice(0, 5).map((s, i) => {
+              const positions = [
+                { top: '2%', left: '0%' },
+                { top: '0%', right: '2%' },
+                { top: '42%', left: '-4%' },
+                { top: '45%', right: '-2%' },
+                { bottom: '2%', left: '28%' },
+              ];
+              const pos = positions[i];
+              return (
+                <motion.div
+                  key={s.src}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.15 + i * 0.1, duration: 0.6 }}
+                  className="absolute z-20 group"
+                  style={{ width: 180, ...pos }}
+                >
+                  <div className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a0a0a]/80 backdrop-blur-sm transition-colors duration-300 hover:border-white/20">
+                    <div className="relative aspect-[3/4] overflow-hidden">
+                      <img
+                        src={s.src}
+                        alt={s.alt}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                    <p className="px-3 py-2 text-[11px] leading-relaxed text-white/45">{s.alt}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Mobile/tablet fallback: stacked layout */}
+          <div className="lg:hidden">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="mx-auto mb-8 max-w-xs overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02]"
+            >
+              <img
+                src="/scene-blocks.png"
+                alt={t.scenes.items[t.scenes.items.length - 1].alt}
+                className="w-full object-cover"
+              />
+            </motion.div>
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
+              {t.scenes.items.slice(0, 5).map((s, i) => (
+                <motion.div
+                  key={s.src}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08, duration: 0.6 }}
+                  className="group overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02] transition-colors duration-300 hover:border-white/20"
+                >
+                  <div className="relative aspect-[3/4] overflow-hidden">
+                    <img
+                      src={s.src}
+                      alt={s.alt}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+                  <p className="px-3 py-2.5 text-xs leading-relaxed text-white/45">{s.alt}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
