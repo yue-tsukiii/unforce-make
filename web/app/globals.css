@@ -139,7 +139,8 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.18); background-clip: padding-box; }
 
 /* Agent markdown */
-.agent-markdown p { margin-bottom: 0.5em; }
+.agent-markdown { line-height: 1.6; }
+.agent-markdown p { margin-bottom: 0.25em; }
 .agent-markdown p:last-child { margin-bottom: 0; }
 .agent-markdown strong { font-weight: 600; color: rgba(0,0,0,0.85); }
 .agent-markdown em { font-style: italic; }
@@ -191,4 +192,18 @@ body {
   border: none;
   border-top: 1px solid rgba(0,0,0,0.1);
   margin: 0.75em 0;
+}
+.hw-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(135deg, rgba(255,108,55,0.12), rgba(255,108,55,0.06));
+  border: 1px solid rgba(255,108,55,0.25);
+  color: var(--accent-1);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.85em;
+  font-weight: 500;
+  padding: 1px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
 }

@@ -560,41 +560,62 @@ function CollapsedTool({ part }: { part: Extract<MessagePart, { type: "tool" }> 
   );
 }
 
+/** Block ID patterns for hardware module highlighting */
+const BLOCK_ID_RE = /\b(heart_\d+|imu_\d+|env_\d+|air_\d+|cam_\d+|light_\d+|mic_\d+|spk_\d+|vib_\d+|hcho_\d+)\b/g;
+
 /** Lightweight markdown → HTML (no deps needed) */
 function renderMarkdown(src: string): string {
-  let html = escapeHtml(src);
+  // Protect code blocks first — extract and replace with placeholders
+  const codeBlocks: string[] = [];
+  let text = src.replace(/```(\w*)\n([\s\S]*?)```/g, (_m, lang, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push(`<pre><code class="lang-${escapeHtml(lang)}">${escapeHtml(code.trimEnd())}</code></pre>`);
+    return `\x00CB${idx}\x00`;
+  });
 
-  // Code blocks ```...```
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_m, _lang, code) =>
-    `<pre><code>${code.trim()}</code></pre>`
-  );
-  // Inline code
-  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-  // Bold
-  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  // Italic
-  html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, "<em>$1</em>");
+  const inlineCodes: string[] = [];
+  text = text.replace(/`([^`]+)`/g, (_m, code) => {
+    const idx = inlineCodes.length;
+    inlineCodes.push(`<code>${escapeHtml(code)}</code>`);
+    return `\x00IC${idx}\x00`;
+  });
+
+  // Now escape the rest
+  let html = escapeHtml(text);
+
+  // Bold (must come before italic) — allow multiline
+  html = html.replace(/\*\*([\s\S]+?)\*\*/g, "<strong>$1</strong>");
+  // Italic — single * not adjacent to another *
+  html = html.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "<em>$1</em>");
   // Headers
   html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
   html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
   html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
   // Blockquotes
   html = html.replace(/^&gt; (.+)$/gm, "<blockquote>$1</blockquote>");
-  // Unordered lists
-  html = html.replace(/^[-*] (.+)$/gm, "<li>$1</li>");
-  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
+  // Unordered lists — dash only (avoid eating * italic lines)
+  html = html.replace(/^- (.+)$/gm, "<li>$1</li>");
+  html = html.replace(/((?:<li>[\s\S]*?<\/li>\n?)+)/g, "<ul>$1</ul>");
   // Ordered lists
   html = html.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
   // HR
   html = html.replace(/^---$/gm, "<hr/>");
   // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-  // Paragraphs (double newline)
-  html = html.replace(/\n{2,}/g, "</p><p>");
+
+  // Hardware block IDs → highlighted chip
+  html = html.replace(BLOCK_ID_RE, '<span class="hw-block">$1</span>');
+
+  // Paragraphs: collapse 2+ newlines into a small break (not a full paragraph gap)
+  html = html.replace(/\n{2,}/g, '<br/><br/>');
   // Single newlines → <br>
   html = html.replace(/\n/g, "<br/>");
 
-  return `<p>${html}</p>`.replace(/<p><\/p>/g, "");
+  // Restore code blocks and inline codes
+  html = html.replace(/\x00CB(\d+)\x00/g, (_m, idx) => codeBlocks[Number(idx)]);
+  html = html.replace(/\x00IC(\d+)\x00/g, (_m, idx) => inlineCodes[Number(idx)]);
+
+  return html;
 }
 
 function escapeHtml(str: string): string {
