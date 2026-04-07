@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Unforce Make / 无为创造
 
-## Getting Started
+Modular IoT blocks that magnetically snap together, auto-join Wi-Fi, and let an AI Agent understand your entire space.
 
-First, run the development server:
+> Hackathon 2026 project — expect frequent changes.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Repo Structure
+
+```
+.
+├── src/               # Aila — Electron desktop AI Agent
+│   ├── main/          #   Main process
+│   ├── preload/       #   Preload scripts
+│   └── renderer/      #   Renderer (React)
+├── web/               # Product website (Next.js)
+│   ├── app/           #   Pages: Landing, Agent, Dev, Docs
+│   ├── lib/           #   i18n, utils
+│   └── public/        #   Static assets, 3D models, images
+├── scripts/           # Build & dev scripts
+└── idea/              # Hackathon ideas & notes
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Future directories (planned)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Directory   | Purpose                              |
+|-------------|--------------------------------------|
+| `comms/`    | Communication layer (MQTT Host, UDP relay, WebSocket bridge) |
+| `firmware/` | ESP32 module firmware (Arduino/ESP-IDF) |
+| `sdk/`      | Client SDK for third-party integrations |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Quick Start
 
-## Learn More
+### Desktop Agent (Aila)
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+bun install
+bun run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Website
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+cd web
+npm install
+npm run dev
+```
 
-## Deploy on Vercel
+Deployed at: https://unforce-make.vercel.app
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tech Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Hardware**: ESP32-S3 / ESP32-C3, POGO-pin magnetic connectors
+- **Protocols**: MQTT (sensors/actuators), UDP (video), WebSocket (audio)
+- **Desktop Agent**: Electron + React + Bun
+- **Website**: Next.js 16 + React 19 + Tailwind CSS 4 + Three.js
+- **AI**: OpenAI GPT-4o via Vercel AI SDK
+
+## Team
+
+Team Unforce Make (无为创造)
