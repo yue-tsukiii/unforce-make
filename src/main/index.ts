@@ -1,364 +1,293 @@
+import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
-import { is } from '@electron-toolkit/utils'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { AgentService } from './agent'
-import {
-  PreferenceMemoryService,
-  type PreferenceMemoryUpdateInput,
-} from './memory/preference-memory-service'
+import { Hono } from 'hono'
+import { createBunWebSocket } from 'hono/bun'
+import { cors } from 'hono/cors'
+import { AgentRuntime } from './agent'
+import { HardwareStore, type HardwareIngressMessage } from './hardware/store'
+import { PreferenceMemoryService } from './memory/preference-memory-service'
 import { ConfigService } from './providers/config-service'
 import { ProviderRegistry } from './providers/registry'
+import { resolveRuntimePaths } from './runtime-paths'
 
-const DEV_RENDERER_URL = 'http://localhost:5173'
-
-// Initialize config service and provider registry
-const configService = new ConfigService()
+const paths = resolveRuntimePaths()
+const configService = new ConfigService(paths.configDir)
 configService.init()
+
 const registry = new ProviderRegistry(configService)
-
-let mainWindow: BrowserWindow | null = null
-let agentService: AgentService | null = null
-let memoryService: PreferenceMemoryService | null = null
-
-function isAppUrl(url: string): boolean {
-  if (url.startsWith('file://')) {
-    return true
+const memoryService = new PreferenceMemoryService(join(paths.memoryDir, 'preferences.sqlite'))
+const hardware = new HardwareStore()
+const stopSimulation = hardware.startSimulation()
+const sessions = new Map<string, AgentRuntime>()
+type WebSocketConnection = { send: (data: string) => void }
+const BunRuntime = globalThis as unknown as {
+  Bun: {
+    serve: (options: {
+      fetch: (request: Request) => Response | Promise<Response>
+      port: number
+      websocket: unknown
+    }) => { stop: (closeActiveConnections?: boolean) => void }
   }
-
-  if (is.dev) {
-    return url.startsWith(DEV_RENDERER_URL)
-  }
-
-  return false
 }
 
-async function openExternalUrl(url: string): Promise<void> {
-  const parsed = new URL(url)
+const app = new Hono()
+const { upgradeWebSocket, websocket } = createBunWebSocket()
 
-  if (!['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
-    throw new Error(`Unsupported external URL protocol: ${parsed.protocol}`)
-  }
-
-  await shell.openExternal(parsed.toString())
+function createRuntime(): AgentRuntime {
+  return new AgentRuntime({
+    configService,
+    cwd: paths.cwd,
+    hardware,
+    memoryService,
+    registry,
+    sessionDir: paths.sessionDir,
+  })
 }
 
-function createWindow(): void {
-  mainWindow = new BrowserWindow({
-    width: 900,
-    height: 700,
-    minWidth: 600,
-    minHeight: 400,
-    show: false,
-    titleBarStyle: 'hiddenInset',
-    backgroundColor: '#0d1117',
-    trafficLightPosition: { x: 16, y: 10 },
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
+async function createSessionRuntime(): Promise<AgentRuntime> {
+  const runtime = createRuntime()
+  const session = await runtime.ensureSession()
+  sessions.set(session.id, runtime)
+  return runtime
+}
+
+async function resolveRuntime(sessionId: string): Promise<AgentRuntime> {
+  const existing = sessions.get(sessionId)
+  if (existing) {
+    return existing
+  }
+
+  const runtime = createRuntime()
+  await runtime.resumeSession(sessionId)
+  sessions.set(runtime.getSessionSummary().id, runtime)
+  return runtime
+}
+
+app.use(
+  '*',
+  cors({
+    allowHeaders: ['Content-Type', 'Authorization'],
+    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    exposeHeaders: ['Content-Type'],
+    origin: process.env.CORS_ORIGIN || '*',
+  }),
+)
+
+app.get('/health', (c) =>
+  c.json({
+    ok: true,
+    service: 'unforce-make-agent-server',
+    time: new Date().toISOString(),
+  }),
+)
+
+app.get('/ready', (c) => {
+  const activeModel = configService.getActiveModelId()
+  const configuredProviders = registry.getConfiguredProviders()
+  const isReady = Boolean(activeModel) && configuredProviders.length > 0
+
+  return c.json(
+    {
+      activeModel,
+      configuredProviders: configuredProviders.map((provider) => provider.id),
+      ok: isReady,
+      workspace: paths.cwd,
     },
-  })
+    isReady ? 200 : 503,
+  )
+})
 
-  mainWindow.on('ready-to-show', () => mainWindow?.show())
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (!isAppUrl(url)) {
-      void openExternalUrl(url).catch((error) => {
-        console.error('Failed to open external URL from new window request:', error)
-      })
-      return { action: 'deny' }
-    }
+app.get('/v1/blocks', (c) => c.json(hardware.getSnapshot()))
 
-    return { action: 'allow' }
-  })
-
-  mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!isAppUrl(url)) {
-      event.preventDefault()
-      void openExternalUrl(url).catch((error) => {
-        console.error('Failed to open external URL from navigation request:', error)
-      })
-    }
-  })
-
-  if (is.dev) {
-    mainWindow.loadURL(DEV_RENDERER_URL)
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+app.get('/v1/blocks/:blockId', (c) => {
+  const block = hardware.getBlock(c.req.param('blockId'))
+  if (!block) {
+    return c.json({ error: 'Block not found' }, 404)
   }
-}
 
-function ensureAgentService(): AgentService {
-  if (!memoryService) {
-    memoryService = new PreferenceMemoryService()
-  }
-  if (!agentService && mainWindow) {
-    agentService = new AgentService(mainWindow, registry, configService, memoryService)
-  }
-  if (!agentService) {
-    throw new Error('Agent service is unavailable before the main window is created')
-  }
-  return agentService
-}
+  return c.json(block)
+})
 
-function notifySessionsChanged(): void {
-  mainWindow?.webContents.send('agent:sessions-changed')
-}
+app.get(
+  '/v1/hardware/ws',
+  upgradeWebSocket(() => {
+    let unsubscribe: (() => void) | null = null
 
-function registerIpcHandlers(): void {
-  // --- Agent session handlers (existing) ---
-
-  ipcMain.handle('agent:prompt', async (_event, text: string) => {
-    ensureAgentService()
-    try {
-      await agentService?.prompt(text)
-    } catch (err) {
-      mainWindow?.webContents.send('agent:error', {
-        message: err instanceof Error ? err.message : String(err),
-      })
-      mainWindow?.webContents.send('agent:complete')
-    } finally {
-      notifySessionsChanged()
-    }
-  })
-
-  ipcMain.handle('agent:abort', async () => {
-    await agentService?.abort()
-  })
-
-  ipcMain.handle('agent:new-session', async () => {
-    await agentService?.newSession()
-    mainWindow?.webContents.send('agent:session-reset')
-    notifySessionsChanged()
-  })
-
-  ipcMain.handle('agent:list-sessions', async () => {
-    const sessions = await ensureAgentService().listSessions()
-    return sessions.map((s) => ({
-      path: s.path,
-      id: s.id,
-      name: s.name,
-      modified: s.modified.toISOString(),
-      messageCount: s.messageCount,
-      firstMessage: s.firstMessage,
-    }))
-  })
-
-  ipcMain.handle('agent:resume-session', async (_event, sessionPath: string) => {
-    const restored = await ensureAgentService().resumeSession(sessionPath)
-    notifySessionsChanged()
-    return restored
-  })
-
-  ipcMain.handle('agent:current-session', () => {
-    return agentService?.getCurrentSessionFile() ?? null
-  })
-
-  ipcMain.handle('shell:open-external', async (_event, url: string) => {
-    await openExternalUrl(url)
-  })
-
-  ipcMain.handle('agent:delete-session', async (_event, sessionPath: string) => {
-    const agent = ensureAgentService()
-    const wasCurrent = agent.getCurrentSessionFile() === sessionPath
-    agent.deleteSession(sessionPath)
-    if (wasCurrent) {
-      mainWindow?.webContents.send('agent:session-reset')
-    }
-    notifySessionsChanged()
-  })
-
-  // --- Provider management handlers ---
-
-  ipcMain.handle('provider:get-all', () => {
-    return configService.getProviders().map(({ apiKey, ...provider }) => ({
-      ...provider,
-      hasApiKey: Boolean(apiKey),
-    }))
-  })
-
-  ipcMain.handle('provider:save', (_event, provider) => {
-    // Validate required fields
-    if (!provider.id || !provider.api) {
-      throw new Error('Provider must have id and api fields')
-    }
-    if (!provider.isBuiltIn && !provider.baseUrl) {
-      throw new Error('Custom providers must have a base URL')
-    }
-    const existing = configService.getProvider(provider.id)
-    const nextApiKey =
-      typeof provider.apiKey === 'string' && provider.apiKey.trim()
-        ? provider.apiKey.trim()
-        : existing?.apiKey || ''
-
-    configService.saveProvider({
-      ...existing,
-      ...provider,
-      apiKey: nextApiKey,
-    })
-    void agentService?.refreshProviderConfig(provider.id)
-    mainWindow?.webContents.send('provider:config-changed')
-  })
-
-  ipcMain.handle('provider:delete', (_event, providerId: string) => {
-    configService.deleteProvider(providerId)
-    void agentService?.refreshProviderConfig(providerId)
-    mainWindow?.webContents.send('provider:config-changed')
-  })
-
-  ipcMain.handle('websearch:get-config', () => {
-    const { tavilyApiKey } = configService.getWebSearchConfig()
     return {
-      hasTavilyApiKey: Boolean(tavilyApiKey),
-    }
-  })
-
-  ipcMain.handle('websearch:save-config', (_event, webSearch) => {
-    const existing = configService.getWebSearchConfig()
-    const nextApiKey =
-      typeof webSearch?.tavilyApiKey === 'string' && webSearch.tavilyApiKey.trim()
-        ? webSearch.tavilyApiKey.trim()
-        : existing.tavilyApiKey
-
-    configService.saveWebSearchConfig({
-      tavilyApiKey: nextApiKey,
-    })
-  })
-
-  ipcMain.handle('provider:test-connection', async (_event, providerId: string) => {
-    const provider = configService.getProvider(providerId)
-    if (!provider) throw new Error('Provider not found')
-    if (!provider.apiKey) throw new Error('No API key configured')
-
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 10_000)
-
-    try {
-      let url: string
-      const headers: Record<string, string> = {}
-
-      if (provider.api === 'openai-completions' || provider.api === 'openai-responses') {
-        url = `${provider.baseUrl}/models`
-        headers.Authorization = `Bearer ${provider.apiKey}`
-      } else if (provider.api === 'anthropic-messages') {
-        url = `${provider.baseUrl}/v1/messages`
-        headers['x-api-key'] = provider.apiKey
-        headers['anthropic-version'] = '2023-06-01'
-        headers['content-type'] = 'application/json'
-      } else if (provider.api === 'google-generative-ai') {
-        url = `${provider.baseUrl}/v1beta/models?key=${provider.apiKey}`
-      } else if (provider.api === 'google-vertex') {
-        url = `${provider.baseUrl}/v1beta1/models?key=${provider.apiKey}`
-      } else {
-        url = `${provider.baseUrl}/models`
-        headers.Authorization = `Bearer ${provider.apiKey}`
-      }
-
-      const fetchOptions: RequestInit = {
-        method: provider.api === 'anthropic-messages' ? 'POST' : 'GET',
-        headers,
-        signal: controller.signal,
-      }
-
-      if (provider.api === 'anthropic-messages') {
-        fetchOptions.body = JSON.stringify({
-          model: 'claude-3-5-haiku-20241022',
-          max_tokens: 1,
-          messages: [{ role: 'user', content: 'test' }],
+      onOpen(_event: Event, ws: WebSocketConnection) {
+        unsubscribe = hardware.subscribe((payload) => {
+          ws.send(JSON.stringify(payload))
         })
-      }
+      },
+      onClose() {
+        unsubscribe?.()
+      },
+      onMessage(event: MessageEvent, ws: WebSocketConnection) {
+        try {
+          const payload = JSON.parse(String(event.data)) as HardwareIngressMessage | { type: 'ping' }
+          if (payload.type === 'ping') {
+            ws.send(JSON.stringify({ type: 'pong', at: new Date().toISOString() }))
+            return
+          }
 
-      const response = await fetch(url, fetchOptions)
-
-      if (response.ok) {
-        return { success: true }
-      }
-
-      if (response.status === 401 || response.status === 403) {
-        return { success: false, error: 'Invalid API key' }
-      }
-
-      return { success: false, error: `API returned status ${response.status}` }
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return { success: false, error: 'Connection timed out (10s)' }
-      }
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : 'Connection failed',
-      }
-    } finally {
-      clearTimeout(timeout)
+          const result = hardware.applyMessage(payload)
+          if (!result.ok) {
+            ws.send(JSON.stringify({ type: 'error', message: result.error }))
+          }
+        } catch (error) {
+          ws.send(
+            JSON.stringify({
+              type: 'error',
+              message: error instanceof Error ? error.message : 'Invalid hardware payload',
+            }),
+          )
+        }
+      },
     }
+  }),
+)
+
+app.get('/v1/chat/sessions', async (c) => {
+  const runtime = createRuntime()
+  const items = await runtime.listSessions()
+  runtime.destroy()
+  return c.json({ items })
+})
+
+app.post('/v1/chat/sessions', async (c) => {
+  const runtime = await createSessionRuntime()
+  return c.json({
+    session: runtime.getSessionSummary(),
+    transcript: runtime.getTranscript(),
   })
+})
 
-  ipcMain.handle('provider:get-models', () => {
-    return registry.getAvailableModels().map(({ provider, models }) => ({
-      providerId: provider.id,
-      providerName: provider.displayName,
-      models: models.map((m) => ({
-        id: m.id,
-        name: m.name,
-        toolUse: m.toolUse,
-        reasoning: m.reasoning,
-        contextWindow: m.contextWindow,
-      })),
-    }))
-  })
+app.get('/v1/chat/sessions/:sessionId', async (c) => {
+  try {
+    const runtime = await resolveRuntime(c.req.param('sessionId'))
+    return c.json({
+      session: runtime.getSessionSummary(),
+      transcript: runtime.getTranscript(),
+    })
+  } catch (error) {
+    return c.json(
+      {
+        error: error instanceof Error ? error.message : 'Session not found',
+      },
+      404,
+    )
+  }
+})
 
-  ipcMain.handle('model:get-active', () => {
-    return configService.getActiveModelId()
-  })
+app.post('/v1/chat/sessions/:sessionId/abort', async (c) => {
+  try {
+    const runtime = await resolveRuntime(c.req.param('sessionId'))
+    await runtime.abort()
+    return c.json({ ok: true })
+  } catch (error) {
+    return c.json(
+      { error: error instanceof Error ? error.message : 'Failed to abort session' },
+      404,
+    )
+  }
+})
 
-  ipcMain.handle('model:set-active', async (_event, providerId: string, modelId: string) => {
-    const modelKey = `${providerId}/${modelId}`
-    configService.setActiveModel(modelKey)
+app.delete('/v1/chat/sessions/:sessionId', async (c) => {
+  try {
+    const sessionId = c.req.param('sessionId')
+    const runtime = await resolveRuntime(sessionId)
+    await runtime.deleteSession(sessionId)
+    runtime.destroy()
+    sessions.delete(sessionId)
+    return c.json({ ok: true })
+  } catch (error) {
+    return c.json(
+      { error: error instanceof Error ? error.message : 'Failed to delete session' },
+      404,
+    )
+  }
+})
 
-    const agent = ensureAgentService()
-    await agent.switchModel(providerId, modelId)
+app.post('/v1/chat/sessions/:sessionId/messages', async (c) => {
+  const sessionId = c.req.param('sessionId')
+  const body = (await c.req.json()) as { locale?: 'en' | 'zh'; text?: string }
+  const text = body.text?.trim()
 
-    mainWindow?.webContents.send('provider:config-changed')
-  })
+  if (!text) {
+    return c.json({ error: 'text is required' }, 400)
+  }
 
-  ipcMain.handle('agent:get-config', () => {
-    return {
-      hasApiKey: configService.getProviders().some((p) => p.apiKey),
-    }
-  })
+  try {
+    const runtime = await resolveRuntime(sessionId)
+    const messageId = randomUUID()
+    const encoder = new TextEncoder()
 
-  ipcMain.handle('memory:list', () => {
-    ensureAgentService()
-    return memoryService?.listManageablePreferences() ?? []
-  })
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const write = (payload: unknown): void => {
+          controller.enqueue(encoder.encode(`${JSON.stringify(payload)}\n`))
+        }
 
-  ipcMain.handle('memory:update', (_event, input: PreferenceMemoryUpdateInput) => {
-    if (!memoryService) {
-      throw new Error('Memory service unavailable')
-    }
-    memoryService.updatePreference(input)
-  })
+        const unsubscribe = runtime.onEvent((event) => {
+          write(event)
 
-  ipcMain.handle('memory:delete', (_event, id: string) => {
-    if (!memoryService) {
-      throw new Error('Memory service unavailable')
-    }
-    memoryService.deletePreference(id)
-  })
+          if (
+            (event.type === 'complete' || event.type === 'error') &&
+            event.messageId === messageId
+          ) {
+            unsubscribe()
+            controller.close()
+          }
+        })
+
+        write({ type: 'session', session: runtime.getSessionSummary() })
+        write({ type: 'user_message', message: { id: randomUUID(), role: 'user', content: text } })
+
+        void runtime.prompt({
+          locale: body.locale,
+          messageId,
+          text,
+        })
+      },
+      cancel() {
+        void runtime.abort()
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'Content-Type': 'application/x-ndjson; charset=utf-8',
+      },
+    })
+  } catch (error) {
+    return c.json(
+      { error: error instanceof Error ? error.message : 'Failed to prompt session' },
+      404,
+    )
+  }
+})
+
+const port = Number(process.env.PORT || 8787)
+const server = BunRuntime.Bun.serve({
+  fetch: app.fetch,
+  port,
+  websocket,
+})
+
+console.log(`[server] Unforce Make agent server listening on http://localhost:${port}`)
+console.log(`[server] Workspace cwd: ${paths.cwd}`)
+console.log(`[server] Data dir: ${paths.dataDir}`)
+
+function shutdown(): void {
+  stopSimulation()
+  for (const runtime of sessions.values()) {
+    runtime.destroy()
+  }
+  memoryService.destroy()
+  server.stop(true)
 }
 
-app.whenReady().then(() => {
-  createWindow()
-
-  registerIpcHandlers()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
-
-app.on('before-quit', () => {
-  agentService?.destroy()
-  memoryService?.destroy()
-})
+process.on('SIGINT', shutdown)
+process.on('SIGTERM', shutdown)

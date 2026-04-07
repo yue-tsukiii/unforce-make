@@ -1,72 +1,302 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getAgentServerUrl, getHardwareWebSocketUrl } from "@/lib/agent-server";
 import { useI18n } from "@/lib/i18n";
 import { MagneticButton } from "./MagneticButton";
 import { SpotlightCard } from "./SpotlightCard";
 
-type CapabilityKey =
-  | "environment"
-  | "heart-rate"
-  | "camera"
-  | "voice"
-  | "led-strip"
-  | "haptics"
-  | "posture"
-  | "formaldehyde";
+type Locale = "en" | "zh";
 
-const onlineBlocks: { id: string; capability: CapabilityKey }[] = [
-  { id: "env-001", capability: "environment" },
-  { id: "hr-002", capability: "heart-rate" },
-  { id: "hcho-01", capability: "formaldehyde" },
-  { id: "vision-01", capability: "camera" },
-  { id: "voice-01", capability: "voice" },
-  { id: "light-03", capability: "led-strip" },
-  { id: "vibe-02", capability: "haptics" },
-  { id: "imu-01", capability: "posture" },
-];
+type Message = {
+  content?: string;
+  id: string;
+  parts?: MessagePart[];
+  role: "assistant" | "user";
+};
+
+type MessagePart =
+  | { text: string; type: "text" }
+  | { text: string; type: "thinking" }
+  | {
+      id: string;
+      input?: unknown;
+      output?: unknown;
+      state?: "done" | "running";
+      toolName: string;
+      type: "tool";
+    };
+
+type SessionResponse = {
+  session: {
+    id: string;
+  };
+  transcript: Array<{
+    content?: string;
+    role: "assistant" | "user";
+    blocks?: Array<
+      | { content: string; type: "text" | "thinking" }
+      | {
+          args?: Record<string, unknown>;
+          id: string;
+          isError?: boolean;
+          name: string;
+          result?: string;
+          status: "done" | "running";
+          type: "tool";
+        }
+    >;
+  }>;
+};
+
+type HardwareSnapshot = {
+  blocks: Array<{
+    actuator?: Record<string, unknown>;
+    battery: number;
+    block_id: string;
+    capability: string;
+    latest?: Record<string, number>;
+    status: "offline" | "online";
+    type: "actuator" | "sensor" | "stream";
+  }>;
+  metrics: {
+    bpm: number | null;
+    hcho: number | null;
+    humidity: number | null;
+    temp: number | null;
+  };
+};
+
+const AGENT_SERVER_URL = getAgentServerUrl();
 
 export function AgentPanel() {
   const { locale, t } = useI18n();
   const [input, setInput] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Re-mount useChat when locale changes so the system prompt stays in sync.
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        api: "/api/chat",
-        body: { locale },
-      }),
-    [locale],
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [snapshot, setSnapshot] = useState<HardwareSnapshot | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [status, setStatus] = useState<"idle" | "streaming" | "submitted">(
+    "idle",
   );
-
-  const { messages, sendMessage, status, stop, error } = useChat({
-    transport,
-    id: `room-${locale}`,
-  });
+  const [error, setError] = useState<string | null>(null);
+  const requestAbortRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, status]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function initSession() {
+      try {
+        const res = await fetch(`${AGENT_SERVER_URL}/v1/chat/sessions`, {
+          method: "POST",
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to initialize agent session");
+        }
+
+        const data = (await res.json()) as SessionResponse;
+        if (cancelled) return;
+
+        setSessionId(data.session.id);
+        setMessages(data.transcript.map(fromTranscriptMessage));
+      } catch (nextError) {
+        if (cancelled) return;
+        setError(
+          nextError instanceof Error ? nextError.message : t.agent.errorFallback,
+        );
+      }
+    }
+
+    void initSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [t.agent.errorFallback]);
+
+  useEffect(() => {
+    const ws = new WebSocket(getHardwareWebSocketUrl());
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data as string) as {
+          payload?: HardwareSnapshot;
+          type: string;
+        };
+
+        if (
+          (payload.type === "snapshot" || payload.type === "update") &&
+          payload.payload
+        ) {
+          setSnapshot(payload.payload);
+        }
+      } catch {
+        // Ignore invalid websocket payloads from other clients.
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
+
   const isLoading = status === "streaming" || status === "submitted";
 
   function submit(e?: React.FormEvent) {
     e?.preventDefault();
     const text = input.trim();
-    if (!text || isLoading) return;
-    sendMessage({ text });
+    if (!text || isLoading || !sessionId) return;
+    setError(null);
     setInput("");
+    void streamPrompt(sessionId, text, locale);
   }
 
   function sendSuggestion(s: string) {
-    if (isLoading) return;
-    sendMessage({ text: s });
+    if (isLoading || !sessionId) return;
+    setError(null);
+    void streamPrompt(sessionId, s, locale);
+  }
+
+  async function streamPrompt(
+    currentSessionId: string,
+    text: string,
+    currentLocale: Locale,
+  ) {
+    requestAbortRef.current?.abort();
+    const controller = new AbortController();
+    requestAbortRef.current = controller;
+    setStatus("submitted");
+
+    try {
+      const res = await fetch(
+        `${AGENT_SERVER_URL}/v1/chat/sessions/${currentSessionId}/messages`,
+        {
+          body: JSON.stringify({ locale: currentLocale, text }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          signal: controller.signal,
+        },
+      );
+
+      if (!res.ok || !res.body) {
+        throw new Error("Failed to stream agent response");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          applyServerEvent(JSON.parse(line) as Record<string, unknown>);
+        }
+      }
+    } catch (nextError) {
+      if (
+        nextError instanceof Error &&
+        nextError.name === "AbortError"
+      ) {
+        return;
+      }
+
+      setError(
+        nextError instanceof Error ? nextError.message : t.agent.errorFallback,
+      );
+      setStatus("idle");
+    } finally {
+      requestAbortRef.current = null;
+    }
+  }
+
+  function applyServerEvent(event: Record<string, unknown>) {
+    switch (event.type) {
+      case "user_message": {
+        const message = event.message as Message | undefined;
+        if (!message) return;
+        setMessages((current) => [...current, message]);
+        setStatus("streaming");
+        return;
+      }
+      case "assistant_start": {
+        const messageId = String(event.messageId);
+        setMessages((current) => [
+          ...current,
+          { id: messageId, parts: [], role: "assistant" },
+        ]);
+        setStatus("streaming");
+        return;
+      }
+      case "text_delta": {
+        setMessages((current) =>
+          appendAssistantPart(current, String(event.messageId), {
+            text: String(event.delta ?? ""),
+            type: "text",
+          }),
+        );
+        setStatus("streaming");
+        return;
+      }
+      case "thinking_delta": {
+        setMessages((current) =>
+          appendAssistantPart(current, String(event.messageId), {
+            text: String(event.delta ?? ""),
+            type: "thinking",
+          }),
+        );
+        setStatus("streaming");
+        return;
+      }
+      case "tool_start": {
+        setMessages((current) =>
+          appendAssistantPart(current, String(event.messageId), {
+            id: String(event.id),
+            input: event.args,
+            state: "running",
+            toolName: String(event.name),
+            type: "tool",
+          }),
+        );
+        return;
+      }
+      case "tool_end": {
+        setMessages((current) =>
+          appendAssistantPart(current, String(event.messageId), {
+            id: String(event.id),
+            output: event.result,
+            state: "done",
+            toolName: String(event.name),
+            type: "tool",
+          }),
+        );
+        return;
+      }
+      case "complete":
+        setStatus("idle");
+        return;
+      case "error":
+        setError(String(event.message ?? t.agent.errorFallback));
+        setStatus("idle");
+        return;
+      default:
+        return;
+    }
   }
 
   return (
@@ -105,10 +335,7 @@ export function AgentPanel() {
 
           {error && (
             <div className="rounded-xl border border-[color:var(--accent-3)]/40 bg-[color:var(--accent-3)]/10 px-4 py-3 text-sm text-black/80">
-              {t.agent.errorFallback}
-              <div className="mt-1 font-mono text-[10px] text-black/40">
-                {error.message}
-              </div>
+              {error}
             </div>
           )}
         </div>
@@ -129,7 +356,16 @@ export function AgentPanel() {
           {isLoading ? (
             <MagneticButton
               type="button"
-              onClick={() => stop()}
+              onClick={() => {
+                requestAbortRef.current?.abort();
+                if (sessionId) {
+                  void fetch(
+                    `${AGENT_SERVER_URL}/v1/chat/sessions/${sessionId}/abort`,
+                    { method: "POST" },
+                  );
+                }
+                setStatus("idle");
+              }}
               variant="ghost"
               className="!px-5 !py-2.5 text-xs"
             >
@@ -150,10 +386,26 @@ export function AgentPanel() {
             {t.agent.signals}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Metric label={t.agent.metrics.temp} value="29.4°" accent="1" />
-            <Metric label={t.agent.metrics.humidity} value="72%" accent="2" />
-            <Metric label={t.agent.metrics.bpm} value="86" accent="3" />
-            <Metric label={t.agent.metrics.hcho} value="0.09" accent="1" />
+            <Metric
+              label={t.agent.metrics.temp}
+              value={formatMetric(snapshot?.metrics.temp, "°C")}
+              accent="1"
+            />
+            <Metric
+              label={t.agent.metrics.humidity}
+              value={formatMetric(snapshot?.metrics.humidity, "%")}
+              accent="2"
+            />
+            <Metric
+              label={t.agent.metrics.bpm}
+              value={formatMetric(snapshot?.metrics.bpm)}
+              accent="3"
+            />
+            <Metric
+              label={t.agent.metrics.hcho}
+              value={formatMetric(snapshot?.metrics.hcho, "mg")}
+              accent="1"
+            />
           </div>
         </SpotlightCard>
 
@@ -170,19 +422,25 @@ export function AgentPanel() {
             {t.agent.online}
           </p>
           <ul className="mt-4 space-y-2 text-sm">
-            {onlineBlocks.map((b) => (
+            {(snapshot?.blocks ?? []).map((b) => (
               <li
-                key={b.id}
+                key={b.block_id}
                 className="flex items-center justify-between rounded-lg border border-black/5 bg-black/[0.02] px-3 py-2"
               >
                 <span className="flex items-center gap-2">
-                  <span className="pulse-dot block h-1.5 w-1.5 rounded-full bg-[color:var(--accent-2)]" />
+                  <span
+                    className={`block h-1.5 w-1.5 rounded-full ${
+                      b.status === "online"
+                        ? "pulse-dot bg-[color:var(--accent-2)]"
+                        : "bg-black/20"
+                    }`}
+                  />
                   <span className="font-mono text-xs text-black/80">
-                    {b.id}
+                    {b.block_id}
                   </span>
                 </span>
                 <span className="text-xs text-black/40">
-                  {t.agent.blockLabels[b.capability]}
+                  {formatCapabilityLabel(b.capability, locale)}
                 </span>
               </li>
             ))}
@@ -193,9 +451,7 @@ export function AgentPanel() {
   );
 }
 
-type UIMessage = ReturnType<typeof useChat>["messages"][number];
-
-function MessageBubble({ message }: { message: UIMessage }) {
+function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
   return (
     <motion.div
@@ -209,34 +465,32 @@ function MessageBubble({ message }: { message: UIMessage }) {
       }
     >
       <div className="space-y-2">
-        {message.parts.map((part, i) => {
-          if (part.type === "text") {
+        {message.content && (
+          <div className="whitespace-pre-wrap">{message.content}</div>
+        )}
+        {(message.parts ?? []).map((part, i) => {
+          if (part.type === "text" || part.type === "thinking") {
             return (
               <div key={i} className="whitespace-pre-wrap">
                 {part.text}
               </div>
             );
           }
-          if (part.type.startsWith("tool-")) {
-            const tp = part as {
-              type: string;
-              state?: string;
-              input?: unknown;
-              output?: unknown;
-            };
-            const toolName = part.type.replace("tool-", "");
+          if (part.type === "tool") {
             return (
               <div
                 key={i}
                 className="rounded-lg border border-[color:var(--accent-1)]/40 bg-[color:var(--accent-1)]/10 px-3 py-2 font-mono text-[11px]"
               >
                 <div className="text-[color:var(--accent-1)]">
-                  → {toolName}
-                  {tp.state ? ` · ${tp.state}` : ""}
+                  → {part.toolName}
+                  {part.state ? ` · ${part.state}` : ""}
                 </div>
-                {tp.output !== undefined && (
+                {part.output !== undefined && (
                   <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px] text-black/60">
-                    {JSON.stringify(tp.output, null, 2)}
+                    {typeof part.output === "string"
+                      ? part.output
+                      : JSON.stringify(part.output, null, 2)}
                   </pre>
                 )}
               </div>
@@ -469,4 +723,92 @@ function MicIcon() {
       />
     </svg>
   );
+}
+
+function fromTranscriptMessage(message: SessionResponse["transcript"][number]): Message {
+  return {
+    content: message.content,
+    id: crypto.randomUUID(),
+    parts:
+      message.blocks?.map((block) => {
+        if (block.type === "tool") {
+          return {
+            id: block.id,
+            input: block.args,
+            output: block.result,
+            state: block.status,
+            toolName: block.name,
+            type: "tool" as const,
+          };
+        }
+
+        return {
+          text: block.content,
+          type: block.type,
+        };
+      }) ?? undefined,
+    role: message.role,
+  };
+}
+
+function appendAssistantPart(
+  messages: Message[],
+  messageId: string,
+  nextPart: MessagePart,
+) {
+  return messages.map((message) => {
+    if (message.id !== messageId) return message;
+
+    const parts = [...(message.parts ?? [])];
+
+    if (nextPart.type === "text" || nextPart.type === "thinking") {
+      const lastPart = parts.at(-1);
+      if (
+        lastPart &&
+        (lastPart.type === "text" || lastPart.type === "thinking") &&
+        lastPart.type === nextPart.type
+      ) {
+        lastPart.text += nextPart.text;
+        return { ...message, parts };
+      }
+    }
+
+    if (nextPart.type === "tool") {
+      const toolIndex = parts.findIndex(
+        (part) => part.type === "tool" && part.id === nextPart.id,
+      );
+
+      if (toolIndex >= 0) {
+        const current = parts[toolIndex] as Extract<MessagePart, { type: "tool" }>;
+        parts[toolIndex] = { ...current, ...nextPart };
+        return { ...message, parts };
+      }
+    }
+
+    parts.push(nextPart);
+    return { ...message, parts };
+  });
+}
+
+function formatMetric(value: number | null | undefined, suffix = "") {
+  if (value == null) return "--";
+  return `${value.toFixed(2).replace(/\.00$/, "")}${suffix}`;
+}
+
+function formatCapabilityLabel(capability: string, locale: Locale) {
+  const labels: Record<string, { en: string; zh: string }> = {
+    camera: { en: "camera", zh: "摄像头" },
+    formaldehyde: { en: "formaldehyde", zh: "甲醛" },
+    heart_rate: { en: "heart rate", zh: "心率" },
+    humidity: { en: "humidity", zh: "湿度" },
+    light: { en: "light", zh: "灯光" },
+    microphone: { en: "microphone", zh: "麦克风" },
+    temperature: { en: "temperature", zh: "温度" },
+    vibration: { en: "vibration", zh: "振动" },
+    voice: { en: "voice", zh: "语音" },
+    imu: { en: "imu", zh: "姿态" },
+  };
+
+  const label = labels[capability];
+  return label ? label[locale] : capability.replaceAll("_", " ");
 }

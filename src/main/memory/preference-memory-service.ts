@@ -1,29 +1,29 @@
 import { randomUUID } from 'node:crypto'
-import { existsSync, mkdirSync } from 'node:fs'
-import { join } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { type Api, complete, type Model } from '@mariozechner/pi-ai'
 import type { ModelRegistry } from '@mariozechner/pi-coding-agent'
-import { app } from 'electron'
 
 type MemorySourceType = 'explicit' | 'inferred'
 type MemoryStatus = 'active' | 'deleted'
 
-interface MemoryItemRow {
-  id: string
-  kind: 'preference'
-  scope: 'user'
-  key: string
-  value_json: string
-  source_type: MemorySourceType
+interface StoredPreferenceMemory {
   confidence: number
-  status: MemoryStatus
+  createdAt: string
+  evidenceCount: number
+  id: string
+  key: string
+  lastAppliedAt: string | null
+  lastConfirmedAt: string | null
   reason: string | null
-  evidence_count: number
-  created_at: string
-  updated_at: string
-  last_confirmed_at: string | null
-  last_applied_at: string | null
+  sourceType: MemorySourceType
+  status: MemoryStatus
+  updatedAt: string
+  value: string
+}
+
+interface MemoryStore {
+  items: StoredPreferenceMemory[]
 }
 
 export interface PreferenceMemory {
@@ -74,6 +74,10 @@ interface CurateTurnOptions {
   model: Model<Api>
   modelRegistry: ModelRegistry
   userText: string
+}
+
+const EMPTY_STORE: MemoryStore = {
+  items: [],
 }
 
 const EXTRACTOR_PROMPT = `You extract long-lived user preference memories from a single assistant turn.
@@ -145,16 +149,9 @@ JSON shape:
   ]
 }`
 
-function safeJsonParse<T>(raw: string): T | null {
-  const trimmed = raw.trim()
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i)
-  const payload = fenced?.[1]?.trim() ?? trimmed
-
-  try {
-    return JSON.parse(payload) as T
-  } catch {
-    return null
-  }
+function clampConfidence(value: number | undefined): number {
+  if (typeof value !== 'number' || Number.isNaN(value)) return 0.5
+  return Math.max(0, Math.min(1, value))
 }
 
 function extractTextFromResponse(response: Awaited<ReturnType<typeof complete>>): string {
@@ -168,89 +165,61 @@ function normalizeValue(value: string): string {
   return value.trim()
 }
 
-function clampConfidence(value: number | undefined): number {
-  if (typeof value !== 'number' || Number.isNaN(value)) return 0.5
-  return Math.max(0, Math.min(1, value))
+function safeJsonParse<T>(raw: string): T | null {
+  const trimmed = raw.trim()
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  const payload = fenced?.[1]?.trim() ?? trimmed
+
+  try {
+    return JSON.parse(payload) as T
+  } catch {
+    return null
+  }
+}
+
+function toPreferenceMemory(item: StoredPreferenceMemory): PreferenceMemory {
+  return {
+    id: item.id,
+    key: item.key,
+    value: item.value,
+    sourceType: item.sourceType,
+    confidence: item.confidence,
+    reason: item.reason,
+    evidenceCount: item.evidenceCount,
+    updatedAt: item.updatedAt,
+  }
 }
 
 export class PreferenceMemoryService {
-  private db: DatabaseSync
+  private filePath: string
+  private store: MemoryStore = { ...EMPTY_STORE }
 
-  constructor(dbPath?: string) {
-    const baseDir = join(app.getPath('userData'), 'memory')
+  constructor(filePath?: string) {
+    const baseDir = filePath
+      ? dirname(filePath)
+      : join(process.env.AGENT_DATA_DIR || process.cwd(), 'memory')
+
     mkdirSync(baseDir, { recursive: true })
-    const resolvedPath = dbPath ?? join(baseDir, 'preferences.sqlite')
-
-    if (!existsSync(baseDir)) {
-      mkdirSync(baseDir, { recursive: true })
-    }
-
-    this.db = new DatabaseSync(resolvedPath)
-    this.db.exec(`
-      PRAGMA journal_mode = WAL;
-      CREATE TABLE IF NOT EXISTS memory_items (
-        id TEXT PRIMARY KEY,
-        kind TEXT NOT NULL,
-        scope TEXT NOT NULL,
-        key TEXT NOT NULL,
-        value_json TEXT NOT NULL,
-        source_type TEXT NOT NULL,
-        confidence REAL NOT NULL DEFAULT 1,
-        status TEXT NOT NULL DEFAULT 'active',
-        reason TEXT,
-        evidence_count INTEGER NOT NULL DEFAULT 1,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        last_confirmed_at TEXT,
-        last_applied_at TEXT
-      );
-      CREATE INDEX IF NOT EXISTS idx_memory_items_active ON memory_items(kind, scope, status, key);
-      CREATE TABLE IF NOT EXISTS memory_events (
-        id TEXT PRIMARY KEY,
-        memory_item_id TEXT,
-        event_type TEXT NOT NULL,
-        payload_json TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_memory_events_item ON memory_events(memory_item_id, created_at);
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_memory_items_unique_active_preference
-      ON memory_items(kind, scope, key)
-      WHERE status = 'active';
-    `)
+    this.filePath = filePath ?? join(baseDir, 'preferences.json')
+    this.load()
   }
 
-  destroy(): void {
-    this.db.close()
-  }
+  destroy(): void {}
 
   listActivePreferences(limit = 8): PreferenceMemory[] {
-    const rows = this.db
-      .prepare(
-        `
-          SELECT *
-          FROM memory_items
-          WHERE kind = 'preference'
-            AND scope = 'user'
-            AND status = 'active'
-          ORDER BY
-            CASE source_type WHEN 'explicit' THEN 0 ELSE 1 END,
-            confidence DESC,
-            updated_at DESC
-          LIMIT ?
-        `,
-      )
-      .all(limit) as unknown as MemoryItemRow[]
-
-    return rows.map((row) => ({
-      id: row.id,
-      key: row.key,
-      value: JSON.parse(row.value_json) as string,
-      sourceType: row.source_type,
-      confidence: row.confidence,
-      reason: row.reason,
-      evidenceCount: row.evidence_count,
-      updatedAt: row.updated_at,
-    }))
+    return this.store.items
+      .filter((item) => item.status === 'active')
+      .sort((a, b) => {
+        if (a.sourceType !== b.sourceType) {
+          return a.sourceType === 'explicit' ? -1 : 1
+        }
+        if (a.confidence !== b.confidence) {
+          return b.confidence - a.confidence
+        }
+        return b.updatedAt.localeCompare(a.updatedAt)
+      })
+      .slice(0, limit)
+      .map(toPreferenceMemory)
   }
 
   listManageablePreferences(): PreferenceMemory[] {
@@ -264,7 +233,6 @@ export class PreferenceMemoryService {
     }
 
     const lines = memories.map((memory) => `- ${memory.key}: ${memory.value}`)
-
     return {
       ids: memories.map((memory) => memory.id),
       text: `## User Preference Memory\n${lines.join('\n')}`,
@@ -275,35 +243,23 @@ export class PreferenceMemoryService {
     if (memoryIds.length === 0) return
 
     const now = new Date().toISOString()
-    const stmt = this.db.prepare(`
-      UPDATE memory_items
-      SET last_applied_at = ?
-      WHERE id = ?
-    `)
+    let changed = false
 
-    for (const memoryId of memoryIds) {
-      stmt.run(now, memoryId)
-      this.insertEvent(memoryId, 'applied', { at: now })
+    for (const item of this.store.items) {
+      if (memoryIds.includes(item.id)) {
+        item.lastAppliedAt = now
+        changed = true
+      }
+    }
+
+    if (changed) {
+      this.persist()
     }
   }
 
   updatePreference({ id, reason, value }: PreferenceMemoryUpdateInput): void {
-    const current = this.db
-      .prepare(
-        `
-          SELECT id, value_json, reason, evidence_count
-          FROM memory_items
-          WHERE id = ?
-            AND kind = 'preference'
-            AND scope = 'user'
-            AND status = 'active'
-        `,
-      )
-      .get(id) as unknown as
-      | { id: string; value_json: string; reason: string | null; evidence_count: number }
-      | undefined
-
-    if (!current) {
+    const item = this.store.items.find((entry) => entry.id === id && entry.status === 'active')
+    if (!item) {
       throw new Error('Memory item not found')
     }
 
@@ -312,58 +268,21 @@ export class PreferenceMemoryService {
       throw new Error('Memory value cannot be empty')
     }
 
-    const now = new Date().toISOString()
-    this.db
-      .prepare(
-        `
-          UPDATE memory_items
-          SET value_json = ?,
-              reason = ?,
-              updated_at = ?
-          WHERE id = ?
-        `,
-      )
-      .run(JSON.stringify(normalizedValue), reason?.trim() || null, now, id)
-
-    this.insertEvent(id, 'edited', {
-      nextReason: reason?.trim() || null,
-      nextValue: normalizedValue,
-      previousReason: current.reason,
-      previousValue: JSON.parse(current.value_json) as string,
-    })
+    item.value = normalizedValue
+    item.reason = reason?.trim() || null
+    item.updatedAt = new Date().toISOString()
+    this.persist()
   }
 
   deletePreference(id: string): void {
-    const current = this.db
-      .prepare(
-        `
-          SELECT id
-          FROM memory_items
-          WHERE id = ?
-            AND kind = 'preference'
-            AND scope = 'user'
-            AND status = 'active'
-        `,
-      )
-      .get(id) as unknown as { id: string } | undefined
-
-    if (!current) {
+    const item = this.store.items.find((entry) => entry.id === id && entry.status === 'active')
+    if (!item) {
       throw new Error('Memory item not found')
     }
 
-    const now = new Date().toISOString()
-    this.db
-      .prepare(
-        `
-          UPDATE memory_items
-          SET status = 'deleted',
-              updated_at = ?
-          WHERE id = ?
-        `,
-      )
-      .run(now, id)
-
-    this.insertEvent(id, 'deleted', { origin: 'manual' })
+    item.status = 'deleted'
+    item.updatedAt = new Date().toISOString()
+    this.persist()
   }
 
   async curateTurn({
@@ -380,11 +299,6 @@ export class PreferenceMemoryService {
       throw new Error(auth.error)
     }
 
-    const extractorInput = {
-      userMessage: trimmedUserText,
-      assistantMessage: assistantText.trim(),
-    }
-
     const extractionResponse = await complete(
       model,
       {
@@ -392,7 +306,19 @@ export class PreferenceMemoryService {
         messages: [
           {
             role: 'user',
-            content: [{ type: 'text', text: JSON.stringify(extractorInput, null, 2) }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    assistantMessage: assistantText.trim(),
+                    userMessage: trimmedUserText,
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
             timestamp: Date.now(),
           },
         ],
@@ -406,6 +332,7 @@ export class PreferenceMemoryService {
     const extractorResult = safeJsonParse<ExtractorResult>(
       extractTextFromResponse(extractionResponse),
     )
+
     const candidates = extractorResult?.candidates
       ?.map((candidate) => ({
         ...candidate,
@@ -429,12 +356,6 @@ export class PreferenceMemoryService {
 
     if (!candidates || candidates.length === 0) return
 
-    const existing = this.listActivePreferences(100)
-    const reconcileInput = {
-      candidates,
-      existingMemories: existing,
-    }
-
     const reconcileResponse = await complete(
       model,
       {
@@ -442,7 +363,19 @@ export class PreferenceMemoryService {
         messages: [
           {
             role: 'user',
-            content: [{ type: 'text', text: JSON.stringify(reconcileInput, null, 2) }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    candidates,
+                    existingMemories: this.listActivePreferences(100),
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
             timestamp: Date.now(),
           },
         ],
@@ -456,178 +389,119 @@ export class PreferenceMemoryService {
     const reconcileResult = safeJsonParse<ReconcilerResult>(
       extractTextFromResponse(reconcileResponse),
     )
+
     const operations = reconcileResult?.operations ?? []
     if (operations.length === 0) return
-
     this.applyOperations(operations)
   }
 
   private applyOperations(operations: ReconcilerOperation[]): void {
     const now = new Date().toISOString()
+    let changed = false
 
-    this.db.exec('BEGIN')
+    for (const operation of operations) {
+      switch (operation.action) {
+        case 'ADD': {
+          if (!operation.key || !operation.value || !operation.sourceType) break
 
-    try {
-      for (const operation of operations) {
-        switch (operation.action) {
-          case 'ADD': {
-            if (!operation.key || !operation.value || !operation.sourceType) continue
-            const existing = this.getActiveRowByKey(operation.key)
-            if (existing) {
-              this.db
-                .prepare(
-                  `
-                    UPDATE memory_items
-                    SET value_json = ?,
-                        source_type = ?,
-                        confidence = ?,
-                        reason = ?,
-                        evidence_count = ?,
-                        updated_at = ?,
-                        last_confirmed_at = CASE WHEN ? = 'explicit' THEN ? ELSE last_confirmed_at END
-                    WHERE id = ?
-                  `,
-                )
-                .run(
-                  JSON.stringify(operation.value),
-                  operation.sourceType,
-                  clampConfidence(operation.confidence),
-                  operation.reason,
-                  existing.evidence_count + 1,
-                  now,
-                  operation.sourceType,
-                  now,
-                  existing.id,
-                )
-              this.insertEvent(existing.id, 'updated', {
-                ...operation,
-                previousValue: JSON.parse(existing.value_json) as string,
-                upgradedFrom: 'ADD',
-              })
-              break
+          const existing = this.getActiveRowByKey(operation.key)
+          if (existing) {
+            existing.value = operation.value
+            existing.sourceType = operation.sourceType
+            existing.confidence = clampConfidence(operation.confidence)
+            existing.reason = operation.reason
+            existing.evidenceCount += 1
+            existing.updatedAt = now
+            if (operation.sourceType === 'explicit') {
+              existing.lastConfirmedAt = now
             }
-            const id = randomUUID()
-            this.db
-              .prepare(
-                `
-                  INSERT INTO memory_items (
-                    id, kind, scope, key, value_json, source_type, confidence, status, reason,
-                    evidence_count, created_at, updated_at, last_confirmed_at, last_applied_at
-                  ) VALUES (?, 'preference', 'user', ?, ?, ?, ?, 'active', ?, 1, ?, ?, ?, NULL)
-                `,
-              )
-              .run(
-                id,
-                operation.key,
-                JSON.stringify(operation.value),
-                operation.sourceType,
-                clampConfidence(operation.confidence),
-                operation.reason,
-                now,
-                now,
-                operation.sourceType === 'explicit' ? now : null,
-              )
-            this.insertEvent(id, 'created', operation)
-            break
-          }
-          case 'UPDATE': {
-            if (!operation.memoryId || !operation.key || !operation.value || !operation.sourceType)
-              continue
-            const current =
-              (this.db
-                .prepare(
-                  `SELECT id, value_json, evidence_count FROM memory_items WHERE id = ? AND status = 'active'`,
-                )
-                .get(operation.memoryId) as unknown as
-                | { id: string; value_json: string; evidence_count: number }
-                | undefined) ?? this.getActiveRowByKey(operation.key)
-            if (!current) continue
-
-            this.db
-              .prepare(
-                `
-                  UPDATE memory_items
-                  SET key = ?,
-                      value_json = ?,
-                      source_type = ?,
-                      confidence = ?,
-                      reason = ?,
-                      evidence_count = ?,
-                      updated_at = ?,
-                      last_confirmed_at = CASE WHEN ? = 'explicit' THEN ? ELSE last_confirmed_at END
-                  WHERE id = ?
-                `,
-              )
-              .run(
-                operation.key,
-                JSON.stringify(operation.value),
-                operation.sourceType,
-                clampConfidence(operation.confidence),
-                operation.reason,
-                current.evidence_count + 1,
-                now,
-                operation.sourceType,
-                now,
-                current.id,
-              )
-            this.insertEvent(current.id, 'updated', {
-              ...operation,
-              previousValue: JSON.parse(current.value_json) as string,
+          } else {
+            this.store.items.push({
+              confidence: clampConfidence(operation.confidence),
+              createdAt: now,
+              evidenceCount: 1,
+              id: randomUUID(),
+              key: operation.key,
+              lastAppliedAt: null,
+              lastConfirmedAt: operation.sourceType === 'explicit' ? now : null,
+              reason: operation.reason,
+              sourceType: operation.sourceType,
+              status: 'active',
+              updatedAt: now,
+              value: operation.value,
             })
-            break
           }
-          case 'DELETE': {
-            if (!operation.memoryId) continue
-            this.db
-              .prepare(
-                `
-                  UPDATE memory_items
-                  SET status = 'deleted',
-                      updated_at = ?
-                  WHERE id = ?
-                `,
-              )
-              .run(now, operation.memoryId)
-            this.insertEvent(operation.memoryId, 'deleted', operation)
-            break
-          }
-          case 'NONE':
-            break
-        }
-      }
 
-      this.db.exec('COMMIT')
-    } catch (error) {
-      this.db.exec('ROLLBACK')
-      throw error
+          changed = true
+          break
+        }
+        case 'UPDATE': {
+          if (!operation.memoryId || !operation.value) break
+          const existing = this.store.items.find(
+            (item) => item.id === operation.memoryId && item.status === 'active',
+          )
+          if (!existing) break
+
+          existing.value = operation.value
+          existing.reason = operation.reason
+          existing.updatedAt = now
+          if (operation.sourceType) {
+            existing.sourceType = operation.sourceType
+          }
+          if (typeof operation.confidence === 'number') {
+            existing.confidence = clampConfidence(operation.confidence)
+          }
+          if (operation.sourceType === 'explicit') {
+            existing.lastConfirmedAt = now
+          }
+
+          changed = true
+          break
+        }
+        case 'DELETE': {
+          if (!operation.memoryId) break
+          const existing = this.store.items.find(
+            (item) => item.id === operation.memoryId && item.status === 'active',
+          )
+          if (!existing) break
+
+          existing.status = 'deleted'
+          existing.updatedAt = now
+          changed = true
+          break
+        }
+        case 'NONE':
+          break
+      }
+    }
+
+    if (changed) {
+      this.persist()
     }
   }
 
-  private insertEvent(memoryItemId: string | null, eventType: string, payload: unknown): void {
-    this.db
-      .prepare(
-        `
-          INSERT INTO memory_events (id, memory_item_id, event_type, payload_json, created_at)
-          VALUES (?, ?, ?, ?, ?)
-        `,
-      )
-      .run(randomUUID(), memoryItemId, eventType, JSON.stringify(payload), new Date().toISOString())
+  private getActiveRowByKey(key: string): StoredPreferenceMemory | undefined {
+    return this.store.items.find((item) => item.key === key && item.status === 'active')
   }
 
-  private getActiveRowByKey(
-    key: string,
-  ): { id: string; value_json: string; evidence_count: number } | undefined {
-    return this.db
-      .prepare(
-        `
-          SELECT id, value_json, evidence_count
-          FROM memory_items
-          WHERE kind = 'preference'
-            AND scope = 'user'
-            AND key = ?
-            AND status = 'active'
-        `,
-      )
-      .get(key) as unknown as { id: string; value_json: string; evidence_count: number } | undefined
+  private load(): void {
+    if (!existsSync(this.filePath)) {
+      this.persist()
+      return
+    }
+
+    try {
+      const raw = readFileSync(this.filePath, 'utf-8')
+      this.store = {
+        items: (JSON.parse(raw) as MemoryStore).items ?? [],
+      }
+    } catch {
+      this.store = { ...EMPTY_STORE }
+      this.persist()
+    }
+  }
+
+  private persist(): void {
+    writeFileSync(this.filePath, JSON.stringify(this.store, null, 2), 'utf-8')
   }
 }

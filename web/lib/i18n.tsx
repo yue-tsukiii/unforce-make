@@ -94,7 +94,7 @@ export const dict = {
     },
     agent: {
       header: "Unforce Agent · live",
-      ready: "Powered by OpenAI via Vercel",
+      ready: "Cloud agent · coding + hardware",
       placeholder: "Ask the room anything…",
       send: "Send",
       stop: "Stop",
@@ -123,8 +123,7 @@ export const dict = {
         posture: "posture",
         formaldehyde: "formaldehyde",
       },
-      errorFallback:
-        "The agent is offline in this preview. Showing a canned reply.",
+      errorFallback: "The agent server is unavailable right now.",
       proactive: {
         title: "Proactive Insights",
         alerts: [
@@ -264,7 +263,7 @@ export const dict = {
     },
     agent: {
       header: "Unforce Agent · 在线",
-      ready: "由 OpenAI × Vercel 驱动",
+      ready: "云端 Agent · coding + hardware",
       placeholder: "随便问问这个房间……",
       send: "发送",
       stop: "停止",
@@ -293,7 +292,7 @@ export const dict = {
         posture: "姿态",
         formaldehyde: "甲醛",
       },
-      errorFallback: "Agent 暂时离线，先给你一条预置回复。",
+      errorFallback: "Agent 服务暂时不可用。",
       proactive: {
         title: "主动洞察",
         alerts: [

@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { app } from 'electron'
 import { createBuiltInProviders } from './built-in'
 import type { AppConfig, ProviderConfig, WebSearchConfig } from './types'
 import { EMPTY_CONFIG } from './types'
@@ -17,7 +16,7 @@ export class ConfigService {
   }
 
   constructor(configDir?: string) {
-    const dir = configDir || join(app.getPath('userData'))
+    const dir = configDir || join(process.env.AGENT_DATA_DIR || process.cwd(), 'config')
     mkdirSync(dir, { recursive: true })
     this.configPath = join(dir, CONFIG_FILENAME)
   }
@@ -29,6 +28,8 @@ export class ConfigService {
     } else {
       this.initFromScratch()
     }
+
+    this.applyEnvironmentOverrides()
     console.log(
       '[config] initialized:',
       this.config.providers.length,
@@ -105,7 +106,7 @@ export class ConfigService {
     const builtIns = createBuiltInProviders()
     this.config = {
       providers: builtIns,
-      activeModelId: null,
+      activeModelId: this.pickDefaultModel(builtIns),
       webSearch: { ...EMPTY_CONFIG.webSearch },
     }
     this.persist()
@@ -134,12 +135,55 @@ export class ConfigService {
 
     return {
       providers: merged,
-      activeModelId: saved.activeModelId,
+      activeModelId: saved.activeModelId ?? this.pickDefaultModel(merged),
       webSearch: {
         ...EMPTY_CONFIG.webSearch,
         ...saved.webSearch,
       },
     }
+  }
+
+  private applyEnvironmentOverrides(): void {
+    const envProviderKeys: Record<string, string | undefined> = {
+      anthropic: process.env.ANTHROPIC_API_KEY,
+      google: process.env.GOOGLE_API_KEY,
+      'google-vertex': process.env.GOOGLE_VERTEX_API_KEY,
+      openai: process.env.OPENAI_API_KEY,
+    }
+
+    this.config.providers = this.config.providers.map((provider) => {
+      const apiKey = envProviderKeys[provider.id]
+      return apiKey ? { ...provider, apiKey } : provider
+    })
+
+    this.config.webSearch = {
+      ...this.config.webSearch,
+      tavilyApiKey: process.env.TAVILY_API_KEY || this.config.webSearch.tavilyApiKey,
+    }
+
+    const envActiveModelId = process.env.AGENT_MODEL
+    if (envActiveModelId) {
+      this.config.activeModelId = envActiveModelId
+      return
+    }
+
+    if (!this.config.activeModelId) {
+      this.config.activeModelId = this.pickDefaultModel(this.config.providers)
+    }
+  }
+
+  private pickDefaultModel(providers: ProviderConfig[]): string | null {
+    const configuredProvider = providers.find((provider) => provider.apiKey && provider.models.length > 0)
+    if (configuredProvider) {
+      const preferredModel =
+        configuredProvider.models.find((model) => model.id === 'gpt-5-mini') ??
+        configuredProvider.models.find((model) => model.id === 'gpt-4.1') ??
+        configuredProvider.models[0]
+
+      return preferredModel ? `${configuredProvider.id}/${preferredModel.id}` : null
+    }
+
+    return null
   }
 
   /** Atomic write: temp file → rename */

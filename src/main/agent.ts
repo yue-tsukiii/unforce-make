@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, unlinkSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename } from 'node:path'
 import type {
   Api,
   AssistantMessage,
@@ -17,25 +17,24 @@ import {
   ModelRegistry,
   SessionManager,
 } from '@mariozechner/pi-coding-agent'
-import { app, type BrowserWindow } from 'electron'
+import type { HardwareStore } from './hardware/store'
 import type { PreferenceMemoryService } from './memory/preference-memory-service'
 import type { ConfigService } from './providers/config-service'
 import type { ProviderRegistry } from './providers/registry'
 import { parseModelKey } from './providers/types'
 import { createCustomTools } from './tools'
 
-const SYSTEM_PROMPT = `You are a helpful AI assistant running on the user's desktop computer.
-You have direct access to the local filesystem and can run shell commands.
+const SYSTEM_PROMPT = `You are a helpful AI assistant running on a cloud server for the Unforce Make platform.
+You have direct access to the server filesystem and can run shell commands when solving coding tasks.
 Be concise and direct. When working with files or commands, briefly explain what you're doing.
 
-You also have access to a set of connected hardware blocks (ESP32 sensor/actuator modules).
+You also have access to connected hardware blocks (ESP32 sensor/actuator modules) through a live hardware gateway.
 Use list_blocks to discover available hardware, get_sensor_data to read sensor values,
 get_camera_snapshot to see what a camera sees, and control_actuator to control lights or vibration.
 When the user asks about their environment, health data, or wants to control devices, use these tools proactively.`
 
-/** UI message format sent to renderer */
 export interface UIMessage {
-  role: 'user' | 'assistant'
+  role: 'assistant' | 'user'
   content?: string
   blocks?: UIBlock[]
 }
@@ -53,66 +52,113 @@ export type UIBlock =
       status: 'running' | 'done'
     }
 
-export class AgentService {
-  private session: ReturnType<
-    Awaited<ReturnType<typeof createAgentSession>>['session']['subscribe']
-  > extends () => void
-    ? Awaited<ReturnType<typeof createAgentSession>>['session']
-    : never = null as never
-  private unsubscribe: (() => void) | null = null
-  private window: BrowserWindow
-  private registry: ProviderRegistry
-  private configService: ConfigService
-  private memoryService: PreferenceMemoryService
+export interface SessionSummary {
+  id: string
+  messageCount?: number
+  modified?: string
+  name: string
+  path: string
+}
+
+export type AgentRuntimeEvent =
+  | { type: 'assistant_start'; messageId: string; session: SessionSummary }
+  | { type: 'complete'; messageId: string; session: SessionSummary }
+  | { type: 'error'; message: string; messageId?: string; session?: SessionSummary }
+  | { type: 'text_delta'; delta: string; messageId: string }
+  | { type: 'thinking_delta'; delta: string; messageId: string }
+  | {
+      type: 'tool_end'
+      id: string
+      isError?: boolean
+      messageId: string
+      name: string
+      result: string
+    }
+  | {
+      type: 'tool_start'
+      args: Record<string, unknown>
+      id: string
+      messageId: string
+      name: string
+    }
+
+export interface AgentRuntimeOptions {
+  configService: ConfigService
+  cwd: string
+  hardware: HardwareStore
+  memoryService: PreferenceMemoryService
+  registry: ProviderRegistry
+  sessionDir: string
+}
+
+type SessionHandle = Awaited<ReturnType<typeof createAgentSession>>['session']
+type Listener = (event: AgentRuntimeEvent) => void
+
+function formatSessionSummary(sessionInfo: SessionInfo): SessionSummary {
+  return {
+    id: basename(sessionInfo.path),
+    messageCount: sessionInfo.messageCount,
+    modified: sessionInfo.modified.toISOString(),
+    name: sessionInfo.name ?? basename(sessionInfo.path),
+    path: sessionInfo.path,
+  }
+}
+
+function summarizeCurrentSession(path: string): SessionSummary {
+  return {
+    id: basename(path),
+    name: basename(path),
+    path,
+  }
+}
+
+export class AgentRuntime {
+  private activeTurn: { assistantText: string; userText: string } | null = null
   private authStorage = AuthStorage.inMemory()
-  private syncedProviderNames = new Set<string>()
-  private currentModelKey: string | null = null
-  private modelRegistry: ModelRegistry = ModelRegistry.create(this.authStorage)
-  private currentMemoryContext = ''
   private currentInjectedMemoryIds: string[] = []
-  private activeTurn: { userText: string; assistantText: string } | null = null
+  private currentMemoryContext = ''
+  private currentMessageId: string | null = null
+  private currentModelKey: string | null = null
+  private listeners = new Set<Listener>()
+  private modelRegistry: ModelRegistry = ModelRegistry.create(this.authStorage)
+  private session: SessionHandle | null = null
+  private syncedProviderNames = new Set<string>()
+  private unsubscribe: (() => void) | null = null
 
-  private get cwd() {
-    console.log('[agent] cwd:', app.getPath('home'))
-    return app.getPath('home')
+  constructor(private options: AgentRuntimeOptions) {}
+
+  onEvent(listener: Listener): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
   }
 
-  private get sessionDir() {
-    return join(app.getPath('userData'), 'sessions')
+  async ensureSession(): Promise<SessionSummary> {
+    if (!this.session) {
+      const sessionManager = SessionManager.create(this.options.cwd, this.options.sessionDir)
+      await this.startSession(sessionManager)
+    }
+
+    return this.getSessionSummary()
   }
 
-  constructor(
-    window: BrowserWindow,
-    registry: ProviderRegistry,
-    configService: ConfigService,
-    memoryService: PreferenceMemoryService,
-  ) {
-    this.window = window
-    this.registry = registry
-    this.configService = configService
-    this.memoryService = memoryService
-  }
+  async prompt(input: { locale?: 'en' | 'zh'; messageId: string; text: string }): Promise<void> {
+    const session = await this.ensureSession()
 
-  async prompt(text: string): Promise<void> {
     try {
-      if (!this.session) {
-        console.log('[agent] initializing session...')
-        await this.initSession()
-        console.log('[agent] session initialized')
-      }
-      const memoryContext = this.memoryService.getPromptContext()
+      const memoryContext = this.options.memoryService.getPromptContext()
       this.currentMemoryContext = memoryContext.text
       this.currentInjectedMemoryIds = memoryContext.ids
-      this.activeTurn = { userText: text, assistantText: '' }
-      console.log('[agent] prompting:', text.slice(0, 100))
-      await this.session.prompt(text)
-      console.log('[agent] prompt complete')
-      this.memoryService.markApplied(this.currentInjectedMemoryIds)
+      this.activeTurn = { userText: input.text, assistantText: '' }
+      this.currentMessageId = input.messageId
+
+      this.emit({ type: 'assistant_start', messageId: input.messageId, session })
+      await this.session?.prompt(this.applyLocaleInstruction(input.text, input.locale))
+      this.options.memoryService.markApplied(this.currentInjectedMemoryIds)
 
       if (this.activeTurn && this.modelRegistry) {
         const turn = this.activeTurn
         const model = this.resolveModel()
-        void this.memoryService
+        void this.options.memoryService
           .curateTurn({
             assistantText: turn.assistantText,
             model,
@@ -124,15 +170,15 @@ export class AgentService {
           })
       }
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
       console.error('[agent] error:', err)
-      this.send('agent:error', {
-        message: err instanceof Error ? err.message : String(err),
-      })
+      this.emit({ type: 'error', message, messageId: input.messageId, session })
     } finally {
       this.currentMemoryContext = ''
       this.currentInjectedMemoryIds = []
       this.activeTurn = null
-      this.send('agent:complete')
+      this.currentMessageId = null
+      this.emit({ type: 'complete', messageId: input.messageId, session })
     }
   }
 
@@ -140,30 +186,37 @@ export class AgentService {
     await this.session?.abort()
   }
 
-  async newSession(): Promise<void> {
+  async newSession(): Promise<SessionSummary> {
     this.cleanup()
+    return this.ensureSession()
   }
 
-  async listSessions(): Promise<SessionInfo[]> {
+  async listSessions(): Promise<SessionSummary[]> {
     try {
-      const sessions = await SessionManager.list(this.cwd, this.sessionDir)
-      return sessions.sort((a, b) => b.modified.getTime() - a.modified.getTime())
+      const sessions = await SessionManager.list(this.options.cwd, this.options.sessionDir)
+      return sessions
+        .sort((a, b) => b.modified.getTime() - a.modified.getTime())
+        .map(formatSessionSummary)
     } catch {
       return []
     }
   }
 
-  async resumeSession(sessionPath: string): Promise<UIMessage[]> {
+  async resumeSession(sessionId: string): Promise<UIMessage[]> {
     this.cleanup()
-    const sessionManager = SessionManager.open(sessionPath, this.sessionDir)
+    const sessionPath = await this.resolveSessionPath(sessionId)
+    const sessionManager = SessionManager.open(sessionPath, this.options.sessionDir)
     await this.startSession(sessionManager)
     return this.buildUIMessages(sessionManager)
   }
 
-  deleteSession(sessionPath: string): void {
+  async deleteSession(sessionId: string): Promise<void> {
+    const sessionPath = await this.resolveSessionPath(sessionId)
+
     if (this.session?.sessionFile === sessionPath) {
       this.cleanup()
     }
+
     if (existsSync(sessionPath)) {
       unlinkSync(sessionPath)
     }
@@ -173,18 +226,33 @@ export class AgentService {
     return this.session?.sessionFile
   }
 
+  getSessionSummary(): SessionSummary {
+    const path = this.session?.sessionFile
+    if (!path) {
+      throw new Error('Agent session has not been initialized')
+    }
+
+    return summarizeCurrentSession(path)
+  }
+
+  getTranscript(): UIMessage[] {
+    const path = this.getCurrentSessionFile()
+    if (!path) return []
+
+    const sessionManager = SessionManager.open(path, this.options.sessionDir)
+    return this.buildUIMessages(sessionManager)
+  }
+
   async switchModel(providerId: string, modelId: string): Promise<void> {
-    const result = this.registry.createModelForId(providerId, modelId)
+    const result = this.options.registry.createModelForId(providerId, modelId)
     if ('error' in result) throw new Error(result.error)
 
     const newModelKey = `${providerId}/${modelId}`
 
     if (this.session) {
       try {
-        console.log('[agent] switching model to:', newModelKey)
         await this.session.setModel(result)
         this.currentModelKey = newModelKey
-        console.log('[agent] model switched successfully')
       } catch (err) {
         console.error('[agent] setModel failed, recreating session:', err)
         this.cleanup()
@@ -203,13 +271,13 @@ export class AgentService {
     this.syncRuntimeApiKeys()
 
     if (!this.currentModelKey) {
-      this.currentModelKey = this.configService.getActiveModelId()
+      this.currentModelKey = this.options.configService.getActiveModelId()
       return
     }
 
     const parsed = parseModelKey(this.currentModelKey)
     if (!parsed) {
-      this.currentModelKey = this.configService.getActiveModelId()
+      this.currentModelKey = this.options.configService.getActiveModelId()
       return
     }
 
@@ -217,10 +285,10 @@ export class AgentService {
       return
     }
 
-    const result = this.registry.createModelForId(parsed.providerId, parsed.modelId)
+    const result = this.options.registry.createModelForId(parsed.providerId, parsed.modelId)
     if ('error' in result) {
       this.cleanup()
-      this.currentModelKey = this.configService.getActiveModelId()
+      this.currentModelKey = this.options.configService.getActiveModelId()
       return
     }
 
@@ -240,43 +308,45 @@ export class AgentService {
     this.cleanup()
   }
 
-  // --- private ---
+  private applyLocaleInstruction(text: string, locale?: 'en' | 'zh'): string {
+    if (locale !== 'zh') return text
+    return `Reply in Simplified Chinese unless the user explicitly requests another language.\n\n${text}`
+  }
 
-  private async initSession(): Promise<void> {
-    const sessionManager = SessionManager.create(this.cwd, this.sessionDir)
-    await this.startSession(sessionManager)
+  private async resolveSessionPath(sessionId: string): Promise<string> {
+    const sessions = await SessionManager.list(this.options.cwd, this.options.sessionDir)
+    const session = sessions.find(
+      (entry) =>
+        entry.id === sessionId || entry.path === sessionId || basename(entry.path) === sessionId,
+    )
+
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`)
+    }
+
+    return session.path
   }
 
   private async startSession(sessionManager: SessionManager): Promise<void> {
     const model = this.resolveModel()
-    console.log('[agent] config:', {
-      model: model.id,
-      api: model.api,
-      provider: model.provider,
-      cwd: this.cwd,
-    })
 
-    mkdirSync(this.sessionDir, { recursive: true })
+    mkdirSync(this.options.sessionDir, { recursive: true })
 
-    const tools = createCodingTools(this.cwd)
-
+    const tools = createCodingTools(this.options.cwd)
     const customTools = createCustomTools({
-      cwd: this.cwd,
-      getWebSearchConfig: () => this.configService.getWebSearchConfig(),
+      cwd: this.options.cwd,
+      getWebSearchConfig: () => this.options.configService.getWebSearchConfig(),
+      hardware: this.options.hardware,
     })
-
-    if (customTools.length > 0) {
-      console.log('[agent] Custom tools enabled:', customTools.map((t) => t.name).join(', '))
-    }
 
     const resourceLoader = new DefaultResourceLoader({
-      cwd: this.cwd,
+      cwd: this.options.cwd,
       appendSystemPromptOverride: (base) =>
         this.currentMemoryContext ? [...base, this.currentMemoryContext] : base,
       systemPromptOverride: () => SYSTEM_PROMPT,
       noExtensions: true,
-      noSkills: false,
       noPromptTemplates: true,
+      noSkills: false,
       noThemes: true,
     })
     await resourceLoader.reload()
@@ -284,49 +354,50 @@ export class AgentService {
     this.syncRuntimeApiKeys()
 
     const { session } = await createAgentSession({
-      cwd: this.cwd,
-      model,
-      tools,
-      customTools,
-      sessionManager,
-      resourceLoader,
       authStorage: this.authStorage,
+      customTools,
+      cwd: this.options.cwd,
+      model,
       modelRegistry: this.modelRegistry,
+      resourceLoader,
+      sessionManager,
+      tools,
     })
 
     this.session = session
-    this.unsubscribe = session.subscribe(this.handleEvent.bind(this))
+    this.unsubscribe = session.subscribe((event: unknown) => this.handleEvent(event))
   }
 
   private resolveModel(): Model<Api> {
     if (this.currentModelKey) {
       const parsed = parseModelKey(this.currentModelKey)
       if (!parsed) throw new Error(`Invalid model key: ${this.currentModelKey}`)
-      const result = this.registry.createModelForId(parsed.providerId, parsed.modelId)
+      const result = this.options.registry.createModelForId(parsed.providerId, parsed.modelId)
       if ('error' in result) throw new Error(`Cannot create model: ${result.error}`)
       return result
     }
 
-    const result = this.registry.createActiveModel()
+    const result = this.options.registry.createActiveModel()
     if ('error' in result) throw new Error(`No model available: ${result.error}`)
-    this.currentModelKey = this.configService.getActiveModelId()
+    this.currentModelKey = this.options.configService.getActiveModelId()
     return result
   }
 
   private cleanup(): void {
     this.unsubscribe?.()
     this.session?.dispose()
-    this.session = null as never
+    this.session = null
     this.unsubscribe = null
     this.currentMemoryContext = ''
     this.currentInjectedMemoryIds = []
     this.activeTurn = null
+    this.currentMessageId = null
   }
 
   private syncRuntimeApiKeys(): void {
     const nextRuntimeKeys = new Map<string, string>()
 
-    for (const provider of this.configService.getProviders()) {
+    for (const provider of this.options.configService.getProviders()) {
       if (provider.apiKey) {
         nextRuntimeKeys.set(String(provider.provider), provider.apiKey)
       }
@@ -354,8 +425,7 @@ export class AgentService {
 
     for (const msg of agentMessages) {
       if ('role' in msg && msg.role === 'toolResult') {
-        const tr = msg as ToolResultMessage
-        toolResultMap.set(tr.toolCallId, tr)
+        toolResultMap.set(msg.toolCallId, msg as ToolResultMessage)
       }
     }
 
@@ -368,20 +438,29 @@ export class AgentService {
           typeof userMsg.content === 'string'
             ? userMsg.content
             : userMsg.content
-                .filter((c) => c.type === 'text')
-                .map((c) => (c as { text: string }).text)
+                .filter((content) => content.type === 'text')
+                .map((content) => (content as { text: string }).text)
                 .join('')
+
         uiMessages.push({ role: 'user', content: text })
-      } else if (msg.role === 'assistant') {
+      }
+
+      if (msg.role === 'assistant') {
         const assistantMsg = msg as AssistantMessage
         const blocks: UIBlock[] = []
 
         for (const part of assistantMsg.content) {
           if (part.type === 'text') {
             blocks.push({ type: 'text', content: part.text })
-          } else if (part.type === 'thinking') {
+            continue
+          }
+
+          if (part.type === 'thinking') {
             blocks.push({ type: 'thinking', content: part.thinking })
-          } else if (part.type === 'toolCall') {
+            continue
+          }
+
+          if (part.type === 'toolCall') {
             const toolResult = toolResultMap.get(part.id)
             blocks.push({
               type: 'tool',
@@ -390,8 +469,8 @@ export class AgentService {
               args: part.arguments,
               result: toolResult
                 ? toolResult.content
-                    .filter((c) => c.type === 'text')
-                    .map((c) => (c as { text: string }).text)
+                    .filter((content) => content.type === 'text')
+                    .map((content) => (content as { text: string }).text)
                     .join('')
                 : undefined,
               isError: toolResult?.isError,
@@ -409,59 +488,80 @@ export class AgentService {
     return uiMessages
   }
 
-  private handleEvent(event: any): void {
-    console.log('--------------------------------')
-    console.log('[agent] event:', event)
-    if (event.type === 'message_update') {
-      console.log('[agent] event:', event.type, '→', event.assistantMessageEvent?.type)
-    } else {
-      console.log('[agent] event:', event.type)
-    }
+  private handleEvent(event: unknown): void {
+    const messageId = this.currentMessageId
+    if (!messageId || typeof event !== 'object' || event === null) return
 
-    switch (event.type) {
+    const payload = event as Record<string, unknown>
+
+    switch (payload.type) {
       case 'message_update': {
-        const e = event.assistantMessageEvent
-        switch (e.type) {
+        const assistantMessageEvent = payload.assistantMessageEvent as
+          | { type?: string; delta?: string; error?: { errorMessage?: string } }
+          | undefined
+
+        switch (assistantMessageEvent?.type) {
           case 'text_delta':
-            if (this.activeTurn) {
-              this.activeTurn.assistantText += e.delta
+            if (typeof assistantMessageEvent.delta === 'string') {
+              if (this.activeTurn) {
+                this.activeTurn.assistantText += assistantMessageEvent.delta
+              }
+              this.emit({
+                type: 'text_delta',
+                delta: assistantMessageEvent.delta,
+                messageId,
+              })
             }
-            this.send('agent:text-delta', e.delta)
             break
           case 'thinking_delta':
-            this.send('agent:thinking-delta', e.delta)
+            if (typeof assistantMessageEvent.delta === 'string') {
+              this.emit({
+                type: 'thinking_delta',
+                delta: assistantMessageEvent.delta,
+                messageId,
+              })
+            }
             break
           case 'error':
-            console.error('[agent] assistant error:', e.error)
-            this.send('agent:error', {
-              message: e.error?.errorMessage || 'Unknown error',
+            this.emit({
+              type: 'error',
+              message: assistantMessageEvent.error?.errorMessage || 'Unknown assistant error',
+              messageId,
+              session: this.getSessionSummary(),
             })
             break
         }
+
         break
       }
       case 'tool_execution_start':
-        this.send('agent:tool-start', {
-          id: event.toolCallId,
-          name: event.toolName,
-          args: event.args,
+        this.emit({
+          type: 'tool_start',
+          args: (payload.args as Record<string, unknown>) ?? {},
+          id: String(payload.toolCallId),
+          messageId,
+          name: String(payload.toolName),
         })
         break
       case 'tool_execution_end':
-        this.send('agent:tool-end', {
-          id: event.toolCallId,
-          name: event.toolName,
+        this.emit({
+          type: 'tool_end',
+          id: String(payload.toolCallId),
+          isError: Boolean(payload.isError),
+          messageId,
+          name: String(payload.toolName),
           result:
-            typeof event.result === 'string' ? event.result : JSON.stringify(event.result, null, 2),
-          isError: event.isError,
+            typeof payload.result === 'string'
+              ? payload.result
+              : JSON.stringify(payload.result ?? null, null, 2),
         })
         break
     }
   }
 
-  private send(channel: string, data?: unknown): void {
-    if (!this.window.isDestroyed()) {
-      this.window.webContents.send(channel, data)
+  private emit(event: AgentRuntimeEvent): void {
+    for (const listener of this.listeners) {
+      listener(event)
     }
   }
 }
