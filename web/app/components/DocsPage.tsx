@@ -36,12 +36,12 @@ export function DocsPage() {
           <pre className="overflow-x-auto rounded-xl border border-black/10 bg-black/[0.02] p-6 font-mono text-xs leading-relaxed text-black/70">
 {`┌──────────────────────────────────────────────────────────┐
 │  AI Agent ${zh ? "层" : "Layer"}                                            │
-│  Aila (Electron) / Web Agent (Next.js + Vercel AI SDK)  │
+│  Aila (Electron) / Web Agent (Next.js + Bun API)        │
 │  LLM ${zh ? "决策" : "reasoning"} · ${zh ? "工具调用" : "tool calls"} · ${zh ? "偏好记忆" : "preference memory"}                │
 ├──────────────────────────────────────────────────────────┤
-│  PC Host ${zh ? "层" : "Layer"}  (Python asyncio)                          │
-│  MQTT Broker · UDP Server · WebSocket Server             │
-│  ${zh ? "事件总线" : "Event Bus"} · ${zh ? "节点注册表" : "Node Registry"} · ${zh ? "端口池" : "Port Pool"} · AI Pipeline           │
+│  Agent Server ${zh ? "层" : "Layer"}  (Bun + Hono)                         │
+│  REST API · NDJSON Stream · WebSocket Hardware Feed     │
+│  HardwareStore · Session Runtime · Provider Registry    │
 ├──────────────────────────────────────────────────────────┤
 │  ${zh ? "硬件模块层" : "Hardware Layer"}                                          │
 │  ESP32-S3 (${zh ? "视觉/语音" : "vision/voice"})  ·  ESP32-C3 (${zh ? "传感器/执行器" : "sensors/actuators"})     │
@@ -51,11 +51,10 @@ export function DocsPage() {
           <pre className="mt-4 overflow-x-auto rounded-xl border border-black/10 bg-black/[0.02] p-6 font-mono text-xs leading-relaxed text-black/70">
 {`${zh ? "数据流" : "Data Flow"}:
 
-${zh ? "传感器" : "Sensors"} ──MQTT──→ Broker ──→ ${zh ? "事件总线" : "Event Bus"} ──→ AI Pipeline / ${zh ? "前端" : "Frontend"}
-${zh ? "视觉块" : "Vision"}  ──UDP───→ UDP Server ──→ ${zh ? "事件总线" : "Event Bus"} ──→ ${zh ? "视觉推理" : "Vision AI"}
-${zh ? "语音块" : "Voice"}   ──WS────→ WS Server  ──→ ${zh ? "事件总线" : "Event Bus"} ──→ ASR / TTS
-AI ${zh ? "决策" : "Decision"} ────→ ${zh ? "事件总线" : "Event Bus"} ──→ MQTT pub ──→ ${zh ? "执行器" : "Actuators"}
-${zh ? "前端" : "Frontend"} / Agent ──WS:3000──→ Host ──→ ${zh ? "事件总线" : "Event Bus"}`}
+${zh ? "传感器/执行器" : "Sensors/Actuators"} ──→ HardwareStore ${zh ? "模拟/接入层" : "simulation/ingress layer"}
+${zh ? "桌面端" : "Desktop"} ──→ AgentRuntime ──→ LLM + ${zh ? "工具" : "tools"} ──→ HardwareStore
+${zh ? "Web 前端" : "Web frontend"} ──POST──→ /v1/chat/sessions/:id/messages ──→ NDJSON ${zh ? "事件流" : "event stream"}
+${zh ? "Web 前端" : "Web frontend"} ──WS────→ /v1/hardware/ws ──→ ${zh ? "实时硬件快照" : "live hardware snapshots"}`}
           </pre>
         </Section>
 
@@ -278,14 +277,18 @@ ${zh ? "模块断线" : "Block disconnects"} → Broker ${zh ? "自动发布" : 
         <Section id="web-api" title={zh ? "Web Agent API" : "Web Agent API"}>
           <p className="mb-4 text-sm text-black/60">
             {zh
-              ? "Web 前端通过 Vercel AI SDK (v6) 的 useChat hook 与 /api/chat 路由通信，支持流式文本和工具调用。"
-              : "The web frontend communicates with /api/chat via Vercel AI SDK (v6) useChat hook, supporting streaming text and tool calls."}
+              ? "Web 前端直接连接 Bun/Hono Agent Server：先创建会话，再通过 NDJSON 流接收文本、思考和工具事件，同时通过独立 WebSocket 订阅硬件快照。"
+              : "The web frontend talks directly to the Bun/Hono agent server: it creates a session, streams text/thinking/tool events over NDJSON, and subscribes to hardware snapshots over a separate WebSocket."}
           </p>
-          <CodeBlock title="POST /api/chat" code={`// Request
-{ "messages": UIMessage[], "locale": "en" | "zh" }
+          <CodeBlock title="POST /v1/chat/sessions/:sessionId/messages" code={`// Request
+{ "text": "Turn the lights warm", "locale": "en" | "zh" }
 
-// Response: streaming text + tool results
-// Model: gpt-4o via @ai-sdk/openai`} />
+// Response: NDJSON event stream
+{ "type": "assistant_start", "messageId": "..." }
+{ "type": "text_delta", "messageId": "...", "delta": "..." }
+{ "type": "tool_start", "messageId": "...", "name": "control_actuator", "args": {...} }
+{ "type": "tool_end", "messageId": "...", "name": "control_actuator", "result": "..." }
+{ "type": "complete", "messageId": "..." }`} />
 
           <h4 className="mb-3 mt-6 font-mono text-xs uppercase tracking-widest text-[color:var(--accent-1)]">
             {zh ? "Web Agent 工具" : "Web Agent Tools"}
@@ -309,20 +312,23 @@ ${zh ? "模块断线" : "Block disconnects"} → Broker ${zh ? "自动发布" : 
           </h4>
           <pre className="overflow-x-auto rounded-xl border border-black/10 bg-black/[0.02] p-6 font-mono text-xs leading-relaxed text-black/70">
 {`${zh ? "桌面" : "Desktop"}: Aila (Electron) → pi-coding-agent → LLM → ${zh ? "硬件 Mock 工具" : "Hardware mock tools"}
-Web:  ${zh ? "浏览器" : "Browser"} → /api/chat (Vercel Function) → OpenAI → ${zh ? "Mock 传感器数据" : "Mock sensor data"}`}
+Web:  ${zh ? "浏览器" : "Browser"} → Railway Web → Railway Agent Server
+                             ├─ POST /v1/chat/sessions
+                             ├─ POST /v1/chat/sessions/:id/messages (NDJSON)
+                             └─ GET  /v1/hardware/ws (WebSocket)`}
           </pre>
 
           <h4 className="mb-3 mt-8 font-mono text-xs uppercase tracking-widest text-black/40">
-            {zh ? "后续接真实 Host" : "Future: Real Host Integration"}
+            {zh ? "真实硬件接入" : "Real Hardware Integration"}
           </h4>
           <pre className="overflow-x-auto rounded-xl border border-black/10 bg-black/[0.02] p-6 font-mono text-xs leading-relaxed text-black/70">
-{`PC Host (WS:3000) ← Cloud Tunnel (WSS) → Vercel Function
-                                            ↕
-                                       ${zh ? "浏览器" : "Browser"} (SSE/WS)
+{`Hardware blocks → MQTT / UDP / WebSocket ingress → Agent Server HardwareStore
+                                             ↕
+                                  ${zh ? "浏览器" : "Browser"} ← /v1/blocks + /v1/hardware/ws
 
-/api/blocks      → ${zh ? "代理查 Host 节点注册表" : "Proxy to Host node registry"} → ${zh ? "返回真实在线积木" : "Real online blocks"}
-/api/blocks/[id] → ${zh ? "代理查 Host 传感器数据" : "Proxy to Host sensor data"} → ${zh ? "返回真实读数" : "Real readings"}
-/api/chat        → LLM + tool call → ${zh ? "通过 Host 下发 MQTT command" : "Issue MQTT command via Host"}`}
+/v1/blocks                    → ${zh ? "返回当前在线积木与状态" : "Return current online blocks and state"}
+/v1/hardware/ws               → ${zh ? "推送实时快照 / 更新" : "Push real-time snapshots / updates"}
+/v1/chat/sessions/:id/messages → LLM + tool call → ${zh ? "通过 HardwareStore 执行动作" : "Execute actions via HardwareStore"}`}
           </pre>
 
           <h4 className="mb-3 mt-8 font-mono text-xs uppercase tracking-widest text-[color:var(--accent-3)]">

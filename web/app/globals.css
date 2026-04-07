@@ -10,6 +10,9 @@
   --surface-strong: rgba(0, 0, 0, 0.05);
   --border: rgba(0, 0, 0, 0.08);
   --border-strong: rgba(0, 0, 0, 0.15);
+  --font-space-grotesk: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-inter: Inter, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-jetbrains-mono: "JetBrains Mono", "SFMono-Regular", "Cascadia Code", monospace;
 }
 
 @theme inline {
