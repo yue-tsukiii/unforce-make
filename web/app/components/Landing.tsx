@@ -226,11 +226,21 @@ export function Landing() {
                   className="absolute z-30"
                   style={{ width: 64, ...pos }}
                 >
-                  <img
+                  <motion.img
                     src={mod.src}
                     alt={mod.alt}
-                    className="w-full drop-shadow-md transition-transform duration-300 hover:scale-110"
+                    className="w-full drop-shadow-md"
                     loading="lazy"
+                    animate={{
+                      y: [0, -6, 0, 4, 0],
+                      rotate: [-2, 2, -1, 1, -2],
+                    }}
+                    transition={{
+                      duration: 4 + i * 0.7,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    whileHover={{ scale: 1.15 }}
                   />
                 </motion.div>
               );
