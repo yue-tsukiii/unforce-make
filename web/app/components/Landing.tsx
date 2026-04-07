@@ -11,6 +11,7 @@ const FloatingBlocks = dynamic(
   { ssr: false },
 );
 import { SpotlightCard } from "./SpotlightCard";
+import { IsometricRoom } from "./IsometricRoom";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
@@ -205,6 +206,17 @@ export function Landing() {
           </h2>
         </motion.div>
 
+        {/* 3D Room */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="mb-12"
+        >
+          <IsometricRoom />
+        </motion.div>
+
         {/* Orbital layout: center body + 5 surrounding scenes */}
         <div className="relative mx-auto" style={{ maxWidth: 1100 }}>
           {/* Desktop orbital layout */}
@@ -323,7 +335,7 @@ export function Landing() {
   );
 }
 
-const teamPhotos = ["/team/1.png", "/team/2.png", "/team/3.png"];
+const teamPhotos = ["/team/1.jpg", "/team/2.jpg", "/team/3.jpg"];
 
 function TeamMarquee() {
   // Double the images for seamless infinite scroll
