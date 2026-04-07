@@ -28,6 +28,8 @@ Server endpoints:
 - `GET /health`
 - `GET /ready`
 - `GET /v1/blocks`
+- `GET /v1/blocks/:blockId/history`
+- `GET /v1/history`
 - `GET /v1/hardware/ws`
 - `POST /v1/chat/sessions`
 - `POST /v1/chat/sessions/:sessionId/messages`
@@ -59,6 +61,10 @@ Environment variables:
 - `AGENT_MODEL=openai/gpt-5-mini`
 - `CORS_ORIGIN=https://<your-web-domain>`
 - `AGENT_DATA_DIR=/data`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_HISTORY_TABLE=hardware_history`
+- `SUPABASE_PERSIST_INTERVAL_MS=15000`
 
 Optional:
 - `TAVILY_API_KEY`
@@ -74,6 +80,8 @@ Recommended Railway settings:
 Deploy check:
 - `GET https://<agent-domain>/health` should return `ok: true`
 - `GET https://<agent-domain>/ready` should return `200` once `OPENAI_API_KEY` and an active model are available
+- `GET https://<agent-domain>/v1/history?limit=5` should return rows after hardware snapshots start flowing
+- `GET https://<agent-domain>/v1/blocks/heart_01/history?minutes=60&limit=10` should return recent rows for that block
 
 ### 2. Web Service
 

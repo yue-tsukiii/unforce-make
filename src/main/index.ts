@@ -5,6 +5,7 @@ import { createBunWebSocket } from 'hono/bun'
 import { cors } from 'hono/cors'
 import { AgentRuntime } from './agent'
 import { HardwareStore, type HardwareIngressMessage } from './hardware/store'
+import { SupabaseHistoryService } from './history/supabase-history-service'
 import { PreferenceMemoryService } from './memory/preference-memory-service'
 import { ConfigService } from './providers/config-service'
 import { ProviderRegistry } from './providers/registry'
@@ -17,6 +18,7 @@ configService.init()
 const registry = new ProviderRegistry(configService)
 const memoryService = new PreferenceMemoryService(join(paths.memoryDir, 'preferences.sqlite'))
 const hardware = new HardwareStore()
+const history = new SupabaseHistoryService()
 const stopSimulation = hardware.startSimulation()
 const sessions = new Map<string, AgentRuntime>()
 type WebSocketConnection = { send: (data: string) => void }
@@ -38,11 +40,20 @@ function createRuntime(): AgentRuntime {
     configService,
     cwd: paths.cwd,
     hardware,
+    history,
     memoryService,
     registry,
     sessionDir: paths.sessionDir,
   })
 }
+
+hardware.subscribe((event) => {
+  if ((event.type === 'snapshot' || event.type === 'update') && history.isEnabled()) {
+    void history.persistSnapshot(event.payload, event.type).catch((error) => {
+      console.error('[history] persist snapshot failed:', error)
+    })
+  }
+})
 
 async function createSessionRuntime(): Promise<AgentRuntime> {
   const runtime = createRuntime()
@@ -90,6 +101,7 @@ app.get('/ready', (c) => {
     {
       activeModel,
       configuredProviders: configuredProviders.map((provider) => provider.id),
+      history: history.getStatus(),
       ok: isReady,
       workspace: paths.cwd,
     },
@@ -106,6 +118,68 @@ app.get('/v1/blocks/:blockId', (c) => {
   }
 
   return c.json(block)
+})
+
+app.get('/v1/blocks/:blockId/history', async (c) => {
+  if (!history.isEnabled()) {
+    return c.json({ error: 'Supabase history is not configured' }, 503)
+  }
+
+  const blockId = c.req.param('blockId')
+  const limit = Math.min(Math.max(Number(c.req.query('limit') || 20), 1), 100)
+  const minutes = Math.min(
+    Math.max(Number(c.req.query('minutes') || c.req.query('range_minutes') || 60), 1),
+    24 * 60,
+  )
+
+  try {
+    const result = await history.queryHistory({
+      blockId,
+      limit,
+      minutes,
+    })
+
+    return c.json(result)
+  } catch (error) {
+    return c.json(
+      {
+        error: error instanceof Error ? error.message : 'Failed to query block history',
+      },
+      500,
+    )
+  }
+})
+
+app.get('/v1/history', async (c) => {
+  if (!history.isEnabled()) {
+    return c.json({ error: 'Supabase history is not configured' }, 503)
+  }
+
+  const capability = c.req.query('capability')
+  const blockId = c.req.query('block_id')
+  const limit = Math.min(Math.max(Number(c.req.query('limit') || 20), 1), 100)
+  const minutes = Math.min(
+    Math.max(Number(c.req.query('minutes') || c.req.query('range_minutes') || 60), 1),
+    24 * 60,
+  )
+
+  try {
+    const result = await history.queryHistory({
+      blockId,
+      capability,
+      limit,
+      minutes,
+    })
+
+    return c.json(result)
+  } catch (error) {
+    return c.json(
+      {
+        error: error instanceof Error ? error.message : 'Failed to query hardware history',
+      },
+      500,
+    )
+  }
 })
 
 app.get(
@@ -279,6 +353,7 @@ const server = BunRuntime.Bun.serve({
 console.log(`[server] Unforce Make agent server listening on http://localhost:${port}`)
 console.log(`[server] Workspace cwd: ${paths.cwd}`)
 console.log(`[server] Data dir: ${paths.dataDir}`)
+console.log(`[server] Supabase history: ${history.isEnabled() ? 'enabled' : 'disabled'}`)
 
 function shutdown(): void {
   stopSimulation()

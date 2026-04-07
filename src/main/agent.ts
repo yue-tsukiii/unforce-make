@@ -23,6 +23,7 @@ import type { ConfigService } from './providers/config-service'
 import type { ProviderRegistry } from './providers/registry'
 import { parseModelKey } from './providers/types'
 import { createCustomTools } from './tools'
+import type { SupabaseHistoryService } from './history/supabase-history-service'
 
 const SYSTEM_PROMPT = `You are a helpful AI assistant running on a cloud server for the Unforce Make platform.
 You have direct access to the server filesystem and can run shell commands when solving coding tasks.
@@ -32,6 +33,7 @@ You also have access to connected hardware blocks (ESP32 sensor/actuator modules
 Use list_blocks to discover available hardware, get_sensor_data to read sensor values,
 get_camera_snapshot to see what a camera sees, and control_actuator to control lights or vibration.
 When the user asks about their environment, health data, or wants to control devices, use these tools proactively.`
+  + ` If historical hardware data is available in Supabase, use get_hardware_history when the user asks about trends, past readings, or changes over time.`
 
 export interface UIMessage {
   role: 'assistant' | 'user'
@@ -86,6 +88,7 @@ export interface AgentRuntimeOptions {
   configService: ConfigService
   cwd: string
   hardware: HardwareStore
+  history?: SupabaseHistoryService | null
   memoryService: PreferenceMemoryService
   registry: ProviderRegistry
   sessionDir: string
@@ -337,6 +340,7 @@ export class AgentRuntime {
       cwd: this.options.cwd,
       getWebSearchConfig: () => this.options.configService.getWebSearchConfig(),
       hardware: this.options.hardware,
+      history: this.options.history ?? null,
     })
 
     const resourceLoader = new DefaultResourceLoader({
