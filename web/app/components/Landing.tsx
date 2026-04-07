@@ -206,9 +206,9 @@ export function Landing() {
         </motion.div>
 
         {/* Orbital layout: center body + 5 surrounding scenes */}
-        <div className="relative mx-auto" style={{ maxWidth: 900 }}>
+        <div className="relative mx-auto" style={{ maxWidth: 1100 }}>
           {/* Desktop orbital layout */}
-          <div className="hidden lg:block" style={{ height: 720 }}>
+          <div className="hidden lg:block" style={{ height: 780 }}>
             {/* Center — body / blocks image */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -216,7 +216,7 @@ export function Landing() {
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
-              style={{ width: 260 }}
+              style={{ width: 280 }}
             >
               <div className="overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-lg">
                 <img
@@ -227,14 +227,14 @@ export function Landing() {
               </div>
             </motion.div>
 
-            {/* 5 orbiting scene cards */}
+            {/* 5 orbiting scene cards — wider */}
             {t.scenes.items.slice(0, 5).map((s, i) => {
               const positions = [
-                { top: '2%', left: '0%' },
-                { top: '0%', right: '2%' },
-                { top: '42%', left: '-4%' },
-                { top: '45%', right: '-2%' },
-                { bottom: '2%', left: '28%' },
+                { top: '0%', left: '-2%' },
+                { top: '0%', right: '-2%' },
+                { top: '40%', left: '-6%' },
+                { top: '40%', right: '-4%' },
+                { bottom: '0%', left: '24%' },
               ];
               const pos = positions[i];
               return (
@@ -245,10 +245,10 @@ export function Landing() {
                   viewport={{ once: true }}
                   transition={{ delay: 0.15 + i * 0.1, duration: 0.6 }}
                   className="absolute z-20 group"
-                  style={{ width: 180, ...pos }}
+                  style={{ width: 260, ...pos }}
                 >
                   <div className="overflow-hidden rounded-2xl border border-black/8 bg-white/90 backdrop-blur-sm shadow-md transition-colors duration-300 hover:border-black/20">
-                    <div className="relative aspect-[3/4] overflow-hidden">
+                    <div className="relative aspect-[4/3] overflow-hidden">
                       <img
                         src={s.src}
                         alt={s.alt}
@@ -266,7 +266,7 @@ export function Landing() {
           {/* Mobile/tablet fallback */}
           <div className="lg:hidden">
             <div className="mx-auto mb-8 flex justify-center">
-              <div className="w-48 overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-lg">
+              <div className="w-52 overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-lg">
                 <img
                   src="/scene-blocks.png"
                   alt={t.scenes.items[t.scenes.items.length - 1].alt}
@@ -284,7 +284,7 @@ export function Landing() {
                   transition={{ delay: i * 0.06, duration: 0.5 }}
                   className="group overflow-hidden rounded-xl border border-black/8 bg-black/[0.02] transition-colors duration-300 hover:border-black/20"
                 >
-                  <div className="relative aspect-[3/4] overflow-hidden">
+                  <div className="relative aspect-[4/3] overflow-hidden">
                     <img
                       src={s.src}
                       alt={s.alt}
@@ -300,28 +300,68 @@ export function Landing() {
         </div>
       </section>
 
-      {/* Team */}
+      {/* Team — scrolling photo gallery */}
       <section
         id="team"
-        className="relative mx-auto max-w-7xl px-6 pb-20 lg:px-10"
+        className="relative pb-20 overflow-hidden"
       >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
-          className="text-center"
+          className="mb-10 text-center px-6"
         >
           <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-black/40">
             {t.team.eyebrow}
           </span>
-          <h2 className="font-display mt-4 text-[clamp(2rem,4.5vw,3rem)] font-medium tracking-[-0.03em] text-gray-900">
-            {t.team.title}
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-black/50">{t.team.desc}</p>
         </motion.div>
+
+        <TeamMarquee />
       </section>
     </>
+  );
+}
+
+const teamPhotos = ["/team/1.png", "/team/2.png", "/team/3.png"];
+
+function TeamMarquee() {
+  // Double the images for seamless infinite scroll
+  const images = [...teamPhotos, ...teamPhotos];
+
+  return (
+    <div className="relative w-full">
+      <div className="team-marquee flex gap-6">
+        {images.map((src, i) => (
+          <div
+            key={i}
+            className="flex-none overflow-hidden rounded-2xl border border-black/8 shadow-sm"
+            style={{ width: 420 }}
+          >
+            <img
+              src={src}
+              alt=""
+              className="h-72 w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        ))}
+      </div>
+
+      <style jsx>{`
+        .team-marquee {
+          animation: marquee-scroll 20s linear infinite;
+          width: max-content;
+        }
+        .team-marquee:hover {
+          animation-play-state: paused;
+        }
+        @keyframes marquee-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+    </div>
   );
 }
 

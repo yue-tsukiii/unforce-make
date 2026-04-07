@@ -89,8 +89,8 @@ export const dict = {
     },
     team: {
       eyebrow: "The team",
-      title: "Built in 48 hours",
-      desc: "ESP32s, Mosquitto, Python asyncio, Next.js, and Claude — everything runs on your own hardware.",
+      title: "",
+      desc: "",
     },
     agent: {
       header: "Unforce Agent · live",
@@ -171,7 +171,7 @@ export const dict = {
     footer: {
       subtitle: "Hackathon · 2026",
       blurb:
-        "Built in 48 hours with ESP32s, Mosquitto, asyncio, Next.js and Claude. Everything runs on your own hardware.",
+        "",
       github: "GitHub",
       docs: "Docs",
       contact: "Contact",
@@ -259,8 +259,8 @@ export const dict = {
     },
     team: {
       eyebrow: "团队",
-      title: "48 小时造出来",
-      desc: "ESP32、Mosquitto、Python asyncio、Next.js 加 Claude —— 一切都跑在你自己的设备上。",
+      title: "",
+      desc: "",
     },
     agent: {
       header: "Unforce Agent · 在线",
@@ -340,7 +340,7 @@ export const dict = {
     footer: {
       subtitle: "黑客松 · 2026",
       blurb:
-        "48 小时用 ESP32、Mosquitto、asyncio、Next.js 与 Claude 做出来。一切都跑在你自己的设备上。",
+        "",
       github: "GitHub",
       docs: "文档",
       contact: "联系",
