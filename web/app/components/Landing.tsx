@@ -138,58 +138,7 @@ export function Landing() {
         </div>
       </section>
 
-      {/* Module Showcase — compact horizontal strip */}
-      <section className="relative mx-auto max-w-7xl px-6 pb-20 lg:px-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-120px" }}
-          transition={{ duration: 0.7 }}
-          className="mb-8"
-        >
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-black/40">
-            {t.modules.eyebrow}
-          </span>
-          <h2 className="font-display mt-3 text-[clamp(1.5rem,3vw,2rem)] font-medium leading-[1.1] tracking-[-0.03em] text-gray-900">
-            {t.modules.title}
-          </h2>
-        </motion.div>
-
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {t.modules.items.map((m, i) => (
-            <motion.div
-              key={m.id}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.04, duration: 0.4 }}
-              className="group flex-none rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 transition-colors hover:border-black/25"
-              style={{ minWidth: 160 }}
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-display text-sm font-medium text-gray-900">
-                  {m.name}
-                </span>
-                <span
-                  className={`rounded-full px-1.5 py-0.5 font-mono text-[9px] uppercase ${
-                    m.cat === "stream"
-                      ? "bg-[#ff6c37]/15 text-[#ff6c37]"
-                      : m.cat === "sensor"
-                        ? "bg-black/8 text-black/60"
-                        : "bg-black/8 text-black/40"
-                  }`}
-                >
-                  {t.modules.categories[m.cat as keyof typeof t.modules.categories]}
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-black/50">{m.desc}</p>
-              <p className="mt-1 font-mono text-[9px] text-black/30">{m.proto}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Smart Space — 3D Room left + Scenes right */}
+      {/* Smart Space — 3D Room center, modules + scenes orbiting */}
       <section className="relative mx-auto max-w-7xl px-6 pb-28 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -206,47 +155,29 @@ export function Landing() {
           </h2>
         </motion.div>
 
-        {/* 3D Room */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="mb-12"
-        >
-          <IsometricRoom />
-        </motion.div>
-
-        {/* Orbital layout: center body + 5 surrounding scenes */}
-        <div className="relative mx-auto" style={{ maxWidth: 1100 }}>
-          {/* Desktop orbital layout */}
-          <div className="hidden lg:block" style={{ height: 780 }}>
-            {/* Center — body / blocks image */}
+        {/* Desktop: 3D room center with orbiting modules + scenes */}
+        <div className="hidden lg:block">
+          <div className="relative mx-auto" style={{ maxWidth: 1100, height: 700 }}>
+            {/* Center — 3D Room */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
-              style={{ width: 280 }}
+              style={{ width: 420 }}
             >
-              <div className="overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-lg">
-                <img
-                  src="/scene-blocks.png"
-                  alt={t.scenes.items[t.scenes.items.length - 1].alt}
-                  className="w-full object-cover"
-                />
-              </div>
+              <IsometricRoom />
             </motion.div>
 
-            {/* 5 orbiting scene cards — wider */}
+            {/* Orbiting scene images — 5 scenes around the room */}
             {t.scenes.items.slice(0, 5).map((s, i) => {
               const positions = [
-                { top: '0%', left: '-2%' },
-                { top: '0%', right: '-2%' },
-                { top: '40%', left: '-6%' },
-                { top: '40%', right: '-4%' },
-                { bottom: '0%', left: '24%' },
+                { top: '0%', left: '0%' },      /* top-left: cooking */
+                { top: '2%', right: '0%' },      /* top-right: bathing */
+                { top: '50%', left: '-2%' },     /* mid-left: baby */
+                { top: '48%', right: '-1%' },    /* mid-right: mood */
+                { bottom: '0%', left: '30%' },   /* bottom-center: sleeping */
               ];
               const pos = positions[i];
               return (
@@ -255,11 +186,11 @@ export function Landing() {
                   initial={{ opacity: 0, scale: 0.85 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.15 + i * 0.1, duration: 0.6 }}
+                  transition={{ delay: 0.2 + i * 0.1, duration: 0.6 }}
                   className="absolute z-20 group"
-                  style={{ width: 260, ...pos }}
+                  style={{ width: 220, ...pos }}
                 >
-                  <div className="overflow-hidden rounded-2xl border border-black/8 bg-white/90 backdrop-blur-sm shadow-md transition-colors duration-300 hover:border-black/20">
+                  <div className="overflow-hidden rounded-2xl border border-black/8 bg-white/90 backdrop-blur-sm shadow-md transition-all duration-300 hover:border-black/20 hover:shadow-lg">
                     <div className="relative aspect-[4/3] overflow-hidden">
                       <img
                         src={s.src}
@@ -273,41 +204,82 @@ export function Landing() {
                 </motion.div>
               );
             })}
+
+            {/* Floating module chips scattered around */}
+            {t.modules.items.map((m, i) => {
+              const chipPositions = [
+                { top: '8%', left: '38%' },
+                { top: '5%', right: '28%' },
+                { top: '28%', left: '8%' },
+                { top: '30%', right: '6%' },
+                { bottom: '28%', left: '10%' },
+                { bottom: '25%', right: '8%' },
+                { bottom: '8%', left: '18%' },
+                { bottom: '5%', right: '22%' },
+              ];
+              const pos = chipPositions[i];
+              return (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4 + i * 0.06, duration: 0.5 }}
+                  className="absolute z-30"
+                  style={pos}
+                >
+                  <div className="rounded-lg border border-black/10 bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm">
+                    <span className="font-mono text-[10px] font-medium text-gray-700">{m.name}</span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mobile/tablet fallback */}
+        <div className="lg:hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="mb-8"
+          >
+            <IsometricRoom />
+          </motion.div>
+
+          {/* Module chips row */}
+          <div className="mb-6 flex flex-wrap justify-center gap-2">
+            {t.modules.items.map((m) => (
+              <div key={m.id} className="rounded-lg border border-black/10 bg-black/[0.02] px-3 py-1.5">
+                <span className="font-mono text-[10px] font-medium text-gray-700">{m.name}</span>
+              </div>
+            ))}
           </div>
 
-          {/* Mobile/tablet fallback */}
-          <div className="lg:hidden">
-            <div className="mx-auto mb-8 flex justify-center">
-              <div className="w-52 overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-lg">
-                <img
-                  src="/scene-blocks.png"
-                  alt={t.scenes.items[t.scenes.items.length - 1].alt}
-                  className="w-full object-cover"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {t.scenes.items.slice(0, 5).map((s, i) => (
-                <motion.div
-                  key={s.src}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.06, duration: 0.5 }}
-                  className="group overflow-hidden rounded-xl border border-black/8 bg-black/[0.02] transition-colors duration-300 hover:border-black/20"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <img
-                      src={s.src}
-                      alt={s.alt}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
-                  <p className="px-2 py-1.5 text-[10px] leading-relaxed text-black/45">{s.alt}</p>
-                </motion.div>
-              ))}
-            </div>
+          {/* Scene grid */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {t.scenes.items.slice(0, 5).map((s, i) => (
+              <motion.div
+                key={s.src}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06, duration: 0.5 }}
+                className="group overflow-hidden rounded-xl border border-black/8 bg-black/[0.02] transition-colors duration-300 hover:border-black/20"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <img
+                    src={s.src}
+                    alt={s.alt}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+                <p className="px-2 py-1.5 text-[10px] leading-relaxed text-black/45">{s.alt}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
