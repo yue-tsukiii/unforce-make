@@ -38,20 +38,21 @@ type Debris = {
 let debrisId = 0;
 
 function spawnDebris(x: number, y: number, color: string): Debris[] {
-  const count = 12 + Math.floor(Math.random() * 8);
+  const count = 16 + Math.floor(Math.random() * 10);
   const pieces: Debris[] = [];
   for (let i = 0; i < count; i++) {
-    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
-    const speed = 40 + Math.random() * 80;
+    // Spread horizontally, fall naturally downward
+    const spreadX = (Math.random() - 0.5) * 120;
+    const fallY = 80 + Math.random() * 250; // always fall down
     pieces.push({
       id: debrisId++,
       x,
       y,
       color,
-      size: 3 + Math.random() * 5,
-      dx: Math.cos(angle) * speed,
-      dy: Math.sin(angle) * speed * 0.6 - 20, // bias slightly upward initially
-      rotate: Math.random() * 720 - 360,
+      size: 2 + Math.random() * 4,
+      dx: spreadX,
+      dy: fallY,
+      rotate: Math.random() * 540 - 270,
     });
   }
   return pieces;
@@ -139,17 +140,17 @@ function DebrisPiece({ d }: { d: Debris }) {
         backgroundColor: d.color,
         opacity: 0.8,
       }}
-      initial={{ x: 0, y: 0, rotate: 0, scale: 1, opacity: 0.9 }}
+      initial={{ x: 0, y: 0, rotate: 0, scale: 1, opacity: 0.85 }}
       animate={{
         x: d.dx,
-        y: d.dy + 200, // gravity pull down
+        y: d.dy,
         rotate: d.rotate,
-        scale: 0,
-        opacity: 0,
+        scale: [1, 0.8, 0],
+        opacity: [0.85, 0.6, 0],
       }}
       transition={{
-        duration: 0.8 + Math.random() * 0.4,
-        ease: [0.25, 0, 0.6, 1],
+        duration: 1 + Math.random() * 0.5,
+        ease: [0.12, 0, 0.39, 0], // accelerating fall (gravity-like)
       }}
     />
   );
@@ -170,7 +171,7 @@ export function FloatingBlocks() {
   return (
     <div
       data-blocks-root
-      className="absolute inset-0 h-[900px] overflow-hidden"
+      className="absolute inset-0 h-[900px]"
       style={{ pointerEvents: "none" }}
       aria-hidden
     >
