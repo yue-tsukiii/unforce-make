@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "src", "electron.vite.config.ts", "web"]
+  "exclude": ["node_modules", "src", "scripts", "electron.vite.config.ts", "web"]
 }
