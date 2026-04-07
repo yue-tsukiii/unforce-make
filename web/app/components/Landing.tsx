@@ -11,7 +11,6 @@ const FloatingBlocks = dynamic(
   { ssr: false },
 );
 import { SpotlightCard } from "./SpotlightCard";
-import { IsometricRoom } from "./IsometricRoom";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
@@ -206,38 +205,77 @@ export function Landing() {
           </h2>
         </motion.div>
 
-        <div className="grid items-start gap-6 lg:grid-cols-2">
-          {/* Left — 3D Room */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <IsometricRoom />
-          </motion.div>
-
-          {/* Right — Scene gallery */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="relative"
-          >
-            {/* Center circle — All-in-One blocks */}
-            <div className="mb-4 flex justify-center">
-              <div className="h-36 w-36 overflow-hidden rounded-full border-4 border-white bg-white shadow-lg sm:h-40 sm:w-40">
+        {/* Orbital layout: center body + 5 surrounding scenes */}
+        <div className="relative mx-auto" style={{ maxWidth: 900 }}>
+          {/* Desktop orbital layout */}
+          <div className="hidden lg:block" style={{ height: 720 }}>
+            {/* Center — body / blocks image */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+              style={{ width: 260 }}
+            >
+              <div className="overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-lg">
                 <img
                   src="/scene-blocks.png"
                   alt={t.scenes.items[t.scenes.items.length - 1].alt}
-                  className="h-full w-full object-cover"
+                  className="w-full object-cover"
+                />
+              </div>
+            </motion.div>
+
+            {/* 5 orbiting scene cards */}
+            {t.scenes.items.slice(0, 5).map((s, i) => {
+              const positions = [
+                { top: '2%', left: '0%' },
+                { top: '0%', right: '2%' },
+                { top: '42%', left: '-4%' },
+                { top: '45%', right: '-2%' },
+                { bottom: '2%', left: '28%' },
+              ];
+              const pos = positions[i];
+              return (
+                <motion.div
+                  key={s.src}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.15 + i * 0.1, duration: 0.6 }}
+                  className="absolute z-20 group"
+                  style={{ width: 180, ...pos }}
+                >
+                  <div className="overflow-hidden rounded-2xl border border-black/8 bg-white/90 backdrop-blur-sm shadow-md transition-colors duration-300 hover:border-black/20">
+                    <div className="relative aspect-[3/4] overflow-hidden">
+                      <img
+                        src={s.src}
+                        alt={s.alt}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                    <p className="px-3 py-2 text-[11px] leading-relaxed text-black/45">{s.alt}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Mobile/tablet fallback */}
+          <div className="lg:hidden">
+            <div className="mx-auto mb-8 flex justify-center">
+              <div className="w-48 overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-lg">
+                <img
+                  src="/scene-blocks.png"
+                  alt={t.scenes.items[t.scenes.items.length - 1].alt}
+                  className="w-full object-cover"
                 />
               </div>
             </div>
-            {/* Scene cards grid */}
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {t.scenes.items.slice(0, -1).map((s, i) => (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {t.scenes.items.slice(0, 5).map((s, i) => (
                 <motion.div
                   key={s.src}
                   initial={{ opacity: 0, y: 12 }}
@@ -246,7 +284,7 @@ export function Landing() {
                   transition={{ delay: i * 0.06, duration: 0.5 }}
                   className="group overflow-hidden rounded-xl border border-black/8 bg-black/[0.02] transition-colors duration-300 hover:border-black/20"
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden">
+                  <div className="relative aspect-[3/4] overflow-hidden">
                     <img
                       src={s.src}
                       alt={s.alt}
@@ -258,7 +296,7 @@ export function Landing() {
                 </motion.div>
               ))}
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
