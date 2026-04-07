@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import Markdown from "react-markdown";
 import { getAgentServerUrl, getHardwareWebSocketUrl } from "@/lib/agent-server";
 import { useI18n } from "@/lib/i18n";
 import { MagneticButton } from "./MagneticButton";
@@ -466,17 +467,29 @@ function MessageBubble({ message }: { message: Message }) {
     >
       <div className="space-y-2">
         {message.content && (
-          <div className="whitespace-pre-wrap">{message.content}</div>
+          isUser
+            ? <div className="whitespace-pre-wrap">{message.content}</div>
+            : <div className="agent-markdown"><Markdown>{message.content}</Markdown></div>
         )}
         {(message.parts ?? []).map((part, i) => {
-          if (part.type === "text" || part.type === "thinking") {
+          if (part.type === "text") {
+            return isUser ? (
+              <div key={i} className="whitespace-pre-wrap">{part.text}</div>
+            ) : (
+              <div key={i} className="agent-markdown"><Markdown>{part.text}</Markdown></div>
+            );
+          }
+          if (part.type === "thinking") {
             return (
-              <div key={i} className="whitespace-pre-wrap">
+              <div key={i} className="whitespace-pre-wrap italic text-black/40 text-xs">
                 {part.text}
               </div>
             );
           }
           if (part.type === "tool") {
+            if (part.toolName === "memory_recall" && part.state === "done" && part.output) {
+              return <MemoryRecallCard key={i} output={part.output} />;
+            }
             return (
               <div
                 key={i}
@@ -701,6 +714,82 @@ function MoodAlertIcon() {
       <circle cx="15" cy="10" r="1" fill="currentColor" />
     </svg>
   );
+}
+
+function MemoryRecallCard({ output }: { output: unknown }) {
+  const memories = parseMemoryOutput(output);
+  if (memories.length === 0) {
+    return (
+      <div className="rounded-lg border border-black/10 bg-black/[0.02] px-3 py-2 font-mono text-[11px] text-black/40">
+        No memories found
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {memories.map((m, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.08, duration: 0.3 }}
+          className="rounded-xl border border-purple-300/40 bg-gradient-to-br from-purple-50 to-indigo-50 px-4 py-3"
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-purple-500">
+              <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7Z" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M10 21h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+            <span className="font-mono text-[9px] uppercase tracking-wider text-purple-500/70">
+              Memory
+            </span>
+            {m.timestamp && (
+              <span className="ml-auto font-mono text-[9px] text-black/25">{m.timestamp}</span>
+            )}
+          </div>
+          {m.label && (
+            <div className="font-display text-xs font-medium text-black/70 mb-1">{m.label}</div>
+          )}
+          <div className="text-[11px] leading-relaxed text-black/60">{m.text}</div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+type MemoryEntry = { label?: string; text: string; timestamp?: string };
+
+function parseMemoryOutput(output: unknown): MemoryEntry[] {
+  if (typeof output === "string") {
+    if (!output.trim()) return [];
+    // Try JSON parse first
+    try {
+      const parsed = JSON.parse(output);
+      return parseMemoryOutput(parsed);
+    } catch {
+      // Plain text - split by double newlines as separate memories
+      return output.split(/\n{2,}/).filter(Boolean).map((t) => ({ text: t.trim() }));
+    }
+  }
+  if (Array.isArray(output)) {
+    return output.map((item) => {
+      if (typeof item === "string") return { text: item };
+      const obj = item as Record<string, unknown>;
+      return {
+        label: (obj.label ?? obj.title ?? obj.key ?? obj.name) as string | undefined,
+        text: String(obj.text ?? obj.content ?? obj.value ?? obj.summary ?? JSON.stringify(obj)),
+        timestamp: (obj.timestamp ?? obj.date ?? obj.time) as string | undefined,
+      };
+    });
+  }
+  if (output && typeof output === "object") {
+    const obj = output as Record<string, unknown>;
+    // Could be { memories: [...] } or { results: [...] }
+    const inner = obj.memories ?? obj.results ?? obj.data ?? obj.items;
+    if (Array.isArray(inner)) return parseMemoryOutput(inner);
+    return [{ text: JSON.stringify(output, null, 2) }];
+  }
+  return [];
 }
 
 function MicIcon() {
